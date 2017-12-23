@@ -40,7 +40,7 @@ TODO: Add long description of the pod here.
   # s.frameworks = 'UIKit', 'MapKit'
   # s.dependency 'AFNetworking', '~> 2.3'
   s.dependency 'SignalR-ObjC', '~> 2.0'
-  #s.dependency 'GoogleWebRTC'
-  s.ios.vendored_frameworks = 'sdk/*.framework'
+  s.dependency 'GoogleWebRTC', '~> 1.0'
+  #s.ios.vendored_frameworks = 'sdk/*.framework'
 
 end
