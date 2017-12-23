@@ -9,7 +9,7 @@
 Pod::Spec.new do |s|
   s.name             = 'InstantMessageService'
   s.version          = '0.1.0'
-  s.summary          = 'A short description of InstantMessageService.'
+  s.summary          = 'A Simple WebRtc Application For Ios "1111 Find Jobs".'
 
 # This description is used to generate tags and improve search results.
 #   * Think: What does it do? Why did you write it? What is the focus?
@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
 #   * Finally, don't worry about the indent, CocoaPods strips it!
 
   s.description      = <<-DESC
-TODO: Add long description of the pod here.
+1111人力銀行專為求職、打工者量身打造，提供最新徵才職缺，全方位滿足就業、打工、兼差、求職、轉職需求。幫你隨時掌握每1則工作資訊機會！
                        DESC
 
   s.homepage         = 'https://github.com/wujackson2007/InstantMessageService'
