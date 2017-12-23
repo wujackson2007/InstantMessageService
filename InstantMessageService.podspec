@@ -27,8 +27,8 @@ TODO: Add long description of the pod here.
   s.author           = { 'wujackson2007' => 'wujackson2007' }
   s.source           = { :git => 'https://github.com/wujackson2007/InstantMessageService.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
-
-  s.ios.deployment_target = '8.0'
+  s.platform         = :ios, "9.0"
+  s.ios.deployment_target = '9.0'
 
   s.source_files = 'InstantMessageService/Classes/**/*'
   
@@ -39,4 +39,8 @@ TODO: Add long description of the pod here.
   # s.public_header_files = 'Pod/Classes/**/*.h'
   # s.frameworks = 'UIKit', 'MapKit'
   # s.dependency 'AFNetworking', '~> 2.3'
+  s.dependency 'SignalR-ObjC', '~> 2.0'
+  #s.dependency 'GoogleWebRTC'
+  s.ios.vendored_frameworks = 'sdk/*.framework'
+
 end
