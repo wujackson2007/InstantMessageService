@@ -1,0 +1,6 @@
+use_frameworks!
+target 'InstantMessageService_Tests' do
+  pod 'InstantMessageService', :path => '../'
+  
+  
+end
