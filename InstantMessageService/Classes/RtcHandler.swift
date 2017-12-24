@@ -81,10 +81,12 @@ class RtcHandler : NSObject {
             self.connection.setRemoteDescription(remoteDesc, completionHandler: { (error:Error?) in
                 if(error == nil) {
                     let _size = self._remoteCandidates.count-1
-                    for _ in 0..._size {
-                        let _candidate:RTCIceCandidate = self._remoteCandidates.remove(at: 0)
-                        self.connection.add(_candidate)
-                        print("=== [\(self.connectLogId)] addRemoteIceCandidate:\(_candidate) ===\r\n")
+                    if(_size > -1) {
+                        for _ in 0..._size {
+                            let _candidate:RTCIceCandidate = self._remoteCandidates.remove(at: 0)
+                            self.connection.add(_candidate)
+                            print("=== [\(self.connectLogId)] addRemoteIceCandidate:\(_candidate) ===\r\n")
+                        }
                     }
                     
                     if(self._delegate != nil) {
@@ -135,22 +137,29 @@ class RtcHandler : NSObject {
  * Protocol
  ============================================================================================== */
 protocol RtcHandlerDelegate : NSObjectProtocol {
-    ///設定 sdp 後會觸發
+    /// 設定 sdp 後會觸發
     func onRtcDescription(sender:RtcHandler, type:String, sdp:RTCSessionDescription)
-    ///遠端 stream 新增或移除會觸發
+    /// 遠端 stream 新增或移除會觸發
     func onRtcStream(sender:RtcHandler, type:String, stream:RTCMediaStream)
-    ///ice 連接狀態改變會觸發
+    /// ice 連接狀態改變會觸發
     func onRtcIceConnectionChange(sender:RtcHandler, newState:RTCIceConnectionState)
+    /// Candidate 新增或移除會觸發
+    func onRtcCandidate(sender:RtcHandler, type:String, candidate:RTCIceCandidate)
 }
 
 //pragma mark - RTCPeerConnectionDelegate
 extension RtcHandler : RTCPeerConnectionDelegate {
     @objc func peerConnectionShouldNegotiate(_ peerConnection: RTCPeerConnection) {}
     @objc func peerConnection(_ peerConnection: RTCPeerConnection, didOpen dataChannel: RTCDataChannel) {}
-    @objc func peerConnection(_ peerConnection: RTCPeerConnection, didGenerate candidate: RTCIceCandidate) {}
-    @objc func peerConnection(_ peerConnection: RTCPeerConnection, didRemove candidates: [RTCIceCandidate]) {}
     @objc func peerConnection(_ peerConnection: RTCPeerConnection, didChange newState: RTCIceGatheringState) {}
     @objc func peerConnection(_ peerConnection: RTCPeerConnection, didChange stateChanged: RTCSignalingState) {}
+    @objc func peerConnection(_ peerConnection: RTCPeerConnection, didRemove candidates: [RTCIceCandidate]) {}
+    @objc func peerConnection(_ peerConnection: RTCPeerConnection, didGenerate candidate: RTCIceCandidate) {
+        if(_delegate != nil) {
+            _delegate!.onRtcCandidate(sender:self, type:"add", candidate:candidate)
+        }
+    }
+    
     @objc func peerConnection(_ peerConnection: RTCPeerConnection, didAdd stream: RTCMediaStream) {
         if(_delegate != nil) {
             _delegate!.onRtcStream(sender:self, type:"add", stream:stream)
@@ -167,8 +176,10 @@ extension RtcHandler : RTCPeerConnectionDelegate {
         switch newState {
         case RTCIceConnectionState.connected, RTCIceConnectionState.completed:
             let _size = self._promiseConnected.count-1
-            for _ in 0..._size {
-                self._promiseConnected.remove(at: 0)(self)
+            if(_size > -1) {
+                for _ in 0..._size {
+                    self._promiseConnected.remove(at: 0)(self)
+                }
             }
             break
             

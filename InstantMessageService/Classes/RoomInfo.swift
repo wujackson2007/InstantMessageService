@@ -8,7 +8,7 @@
 import Foundation
 
 public class RoomInfo : NSObject {
-    private var _delegates:Array<RoomInfoDelegate> = []
+    private var _delegates:Dictionary<String, RoomInfoDelegate> = [:]
     private var _userType:String = ""
     private var _cid:String = ""
     private var _tNo:String = ""
@@ -20,10 +20,11 @@ public class RoomInfo : NSObject {
     private var _eName:String = ""
     private var _msg:String = ""
     private var _msgType:String = ""
-    private var _pickupTime:CLongLong = 0
-    private var _hungUpTime:CLongLong = 0
+    private var _pickupTime:Double = 0.0
+    private var _hungUpTime:Double = 0.0
+    private var _isDial:Bool = false
     
-    ///使用者類型: 1_公司廠商, 2_求職者
+    ///使用者類型: 1_求職者, 2_公司廠商
     public var userType:String { get { return _userType } }
     ///
     public var cid:String { get { return _cid } }
@@ -42,22 +43,37 @@ public class RoomInfo : NSObject {
     ///職缺名稱
     public var eName:String { get { return _eName } }
     
+    ///
+    public var roomId:String { get { return "\(_oNo)_\(_tNo)_\(_uNo)" } }
+    
     // 使用於訊息
     public var msg:String { get { return _msg } }
     /// 訊息類型 0_文字, 1_聲音, 2_影像
     public var msgType:String { get { return _msgType } }
+    
+    //通話相關
+    /// 是否為撥打
+    public var isDial:Bool { get { return _isDial } }
+    /// 是否為視訊
+    public var isVideo:Bool { get { return _msgType == "2" ? true : false } }
     /// 接聽時間
-    public var pickupTime:CLongLong { get { return _pickupTime } }
+    public var pickupTime:Double { get { return _pickupTime } }
     /// 掛斷時間
-    public var hungUpTime:CLongLong { get { return _hungUpTime } }
+    public var hungUpTime:Double { get { return _hungUpTime } }
     
     /// 設定當資料變動時通知
-    public func setDelegate(delegate:RoomInfoDelegate) {
-        _delegates.append(delegate)
+    public func setDelegate(key:String, delegate:RoomInfoDelegate) -> Void {
+        guard _delegates[key] == nil else { return }
+        _delegates[key] = delegate
+    }
+    
+    public func rmDelegate(key:String) -> Void {
+        guard _delegates[key] != nil else { return }
+        _delegates.removeValue(forKey: key)
     }
     
     public func setInfo(userType:Any? = nil, cid:Any? = nil, tNo:Any? = nil, tName:Any? = nil, oNo:Any? = nil, oName:Any? = nil, uNo:Any? = nil, eNo:Any? = nil, eName:Any? = nil
-        , msg:Any? = nil, msgType:Any? = nil, pickupTime:Any? = nil, hungUpTime:Any? = nil)
+        , msg:Any? = nil, msgType:Any? = nil, pickupTime:Any? = nil, hungUpTime:Any? = nil, isDial:Any? = nil)
     {
         var _fields:Array<String> = []
         if(userType != nil) {
@@ -115,14 +131,29 @@ public class RoomInfo : NSObject {
             _fields.append("msgType")
         }
         
+        if(pickupTime != nil) {
+            _pickupTime = pickupTime as! Double
+            _fields.append("pickupTime")
+        }
+        
+        if(hungUpTime != nil) {
+            _hungUpTime = hungUpTime as! Double
+            _fields.append("hungUpTime")
+        }
+        
+        if(isDial != nil) {
+            _isDial = isDial as! Bool
+            _fields.append("isDial")
+        }
+        
         if(_fields.count > 0) {
-            for _delegate in _delegates {
+            for (_, _delegate) in _delegates {
                 _delegate.onChange(sender:self, fields:_fields)
             }
         }
     }
 }
 
-public protocol RoomInfoDelegate : NSObjectProtocol {
-    func onChange(sender:RoomInfo, fields:Array<String>) -> Void
+@objc public protocol RoomInfoDelegate : NSObjectProtocol {
+    @objc func onChange(sender:RoomInfo, fields:Array<String>) -> Void
 }
