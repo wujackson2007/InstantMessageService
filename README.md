@@ -22,7 +22,7 @@ pod 'InstantMessageService'
 
 ## Author
 
-wujackson2007, wujackson2007
+wujackson2007, wujackson2007@gmail.com
 
 ## License
 

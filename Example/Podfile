@@ -1,6 +1,11 @@
 use_frameworks!
-target 'InstantMessageService_Tests' do
+
+target 'InstantMessageService_Example' do
   pod 'InstantMessageService', :path => '../'
-  
-  
+
+  target 'InstantMessageService_Tests' do
+    inherit! :search_paths
+
+    
+  end
 end

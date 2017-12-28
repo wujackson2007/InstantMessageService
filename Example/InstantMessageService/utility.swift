@@ -6,7 +6,7 @@
 //  Copyright © 2017年 wujackson. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 class utility {
     static func getValue<T>(val:Any) -> T? {
@@ -17,12 +17,6 @@ class utility {
         }
         
         return o_val
-    }
-    
-    static func synchronized(lock: AnyObject, closure: () -> ()) {
-        objc_sync_enter(lock)
-        closure()
-        objc_sync_exit(lock)
     }
     
     static func convertToJson(of target:Any) -> String? {

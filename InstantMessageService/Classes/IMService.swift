@@ -5,15 +5,22 @@
 //  Created by wujackson on 2017/12/20.
 //  Copyright © 2017年 wujackson. All rights reserved.
 //
+import UIKit
 import WebRTC
 
 public class IMService : NSObject {
-    var _factory:RTCPeerConnectionFactory?
-    var _signHandler:SignHandler?
+    final var _factory:RTCPeerConnectionFactory?
+    final var _signHandler:SignHandler?
+    final var _rtcMedia:RtcMedia?
     final var _rtcHandlers:Dictionary<String, RtcHandler> = [:]
     final var _delegates:Dictionary<String, IMServiceDelegate> = [:]
-    final var _promiseConnected:Array<() -> Void> = []
+    final var _promiseSignConnected:Array<() -> Void> = []
+    final var _promiseRtcConnected:Array<() -> Void> = []
     final var _roomInfo:RoomInfo = RoomInfo()
+    final var _localProxy:ProxyRenderer = ProxyRenderer()
+    final var _remoteProxy:ProxyRenderer = ProxyRenderer()
+    
+    public var rtcMedia:RtcMedia { get { return _rtcMedia! } }
     var _isServiceStart:Bool = false
     var _isSignConnected:Bool = false
     var _isIceConnected:Bool = false
@@ -29,9 +36,17 @@ public class IMService : NSObject {
         super.init()
         _factory = RtcHandler.factory
         _signHandler = SignHandler.init(delegate: self)
+        _rtcMedia = RtcMedia.init(factory:_factory!)
+        
+        //使用手動控制
+        let session:RTCAudioSession = RTCAudioSession.sharedInstance()
+        session.useManualAudio = true
+        session.isAudioEnabled = false
     }
     
     deinit {
+        _localProxy.set(target:nil)
+        _remoteProxy.set(target:nil)
         stop()
     }
     
@@ -46,16 +61,25 @@ public class IMService : NSObject {
     }
     
     /// 服務啟動
-    public func start(hubName:String, url:String, queryString:Dictionary<String,String>) -> Void {
+    public func start(hubName:String, url:String, queryString:Dictionary<String,String>, onStart:(() -> Void)? = nil) -> Void {
+        if(onStart != nil) {
+            if(_isSignConnected) {
+                onStart!()
+            }
+            else {
+                _promiseSignConnected.append(onStart!)
+            }
+        }
+        
         guard !_isServiceStart else { return }
         _isServiceStart = true
-        _signHandler?.start(hubName: hubName, url: url, queryString: queryString)
+        _signHandler!.start(hubName: hubName, url: url, queryString: queryString)
     }
     
     /// 服務停止
     public func stop() -> Void {
         guard _isServiceStart else { return }
-        _signHandler?.stop()
+        _signHandler!.stop()
         _isServiceStart = false
     }
     
@@ -83,15 +107,16 @@ public class IMService : NSObject {
         case "0":
             guard (_message != "") else { return }
             _isSend = true
+            invokeDelegate(name: "onImMessage", args: [type, self.getUserMsgLog(msgType: type, msg: _message, whoTalk: "1")])
             break
             
         case "1", "2":
             // Ex: {"start":"2017/01/01 11:11:11","end":"2017/01/01 11:11:31","duringTime":20}
-            if(_roomInfo.pickupTime > 0 && _roomInfo.hungUpTime > 0) {
+            if(_roomInfo.phonePickupTime > 0 && _roomInfo.phoneHungUpTime > 0) {
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                timeStart = dateFormatter.string(from: Date.init(timeIntervalSince1970: _roomInfo.pickupTime))
-                timeEnd = dateFormatter.string(from: Date.init(timeIntervalSince1970: _roomInfo.hungUpTime))
+                timeStart = dateFormatter.string(from: Date.init(timestamp: _roomInfo.phonePickupTime))
+                timeEnd = dateFormatter.string(from: Date.init(timestamp: _roomInfo.phoneHungUpTime))
             }
             else {
                 _message = "取消"
@@ -116,6 +141,23 @@ public class IMService : NSObject {
                                                     fileJson])
     }
     
+    /// 產生使用者介面顯示訊息
+    func getUserMsgLog(msgType:String, msg:String, whoTalk:String? = "0", duringTime:Int? = 0) -> String {
+        var o_val = ""
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        if let jsonData = utility.convertToJson(of: ["msgType": Int(msgType)!
+            , "whoTalk": Int(whoTalk!)!
+            , "msgLog":msg
+            , "dateIn":dateFormatter.string(from: Date.init())
+            , "duringTime":duringTime!])
+        {
+            o_val = jsonData
+        }
+        
+        return o_val
+    }
+    
     ///
     public func signInvoke(method: String!, withArgs args: [Any]!) -> Void {
         _signHandler!.invoke(method, withArgs: args)
@@ -132,7 +174,7 @@ public class IMService : NSObject {
                 
             case "onImPhoneAction":
                 if(owner.onImPhoneAction != nil) {
-                    owner.onImPhoneAction!(sender: self, isVideo:args[0] as! Bool, action:args[1] as! String)
+                    owner.onImPhoneAction!(sender: self, isVideo:args[0] as! Bool, args:args[1] as! Array<String>)
                 }
                 break
                 
@@ -178,23 +220,32 @@ public class IMService : NSObject {
         let arg1:String = roomData.roomId
         let arg2:String = "{\"act\":\"\(action)\"}";
         let _fn = {
-            self.phoneViewOpen(isDial: isDial, isVideo: isVideo)
-            if(isDial) {
-                self.signInvoke(method: arg0, withArgs: [arg1, arg2])
-            }
+            self.setLocalStream(isVideo:isVideo, isDial: isDial)
+            self.signInvoke(method: arg0, withArgs: [arg1, arg2])
         }
         
         switch (action) {
-        case "dial", "show":
+        case "dial":
+            self.phoneViewOpen(isDial: isDial, isVideo: isVideo)
             if(_isIceConnected) {
                 _fn()
             } else {
-                _promiseConnected.append({
+                _promiseRtcConnected.append({
                     _fn()
                 })
-                
                 notifyUser()
             }
+            break
+            
+        case "show":
+            self.phoneViewOpen(isDial: isDial, isVideo: isVideo)
+            break
+            
+        case "pickup":
+            if(!isDial) {
+                self.setLocalStream(isVideo:isVideo, isDial: isDial)
+            }
+            signInvoke(method: arg0, withArgs: [arg1, arg2])
             break
             
         default:
@@ -203,8 +254,32 @@ public class IMService : NSObject {
         }
     }
     
+    public func setProxyRenderer(local:RtcView?, remote:RtcView?) -> Void {
+        _localProxy.set(target:local)
+        _remoteProxy.set(target:remote)
+    }
+    
+    func setLocalStream(isVideo:Bool, isDial:Bool) -> Void {
+        self.rtcMedia.videoTrack.isEnabled = isVideo
+        self._localProxy.set(track:self.rtcMedia.videoTrack)
+        self.rtcMedia.startCapture(videoWidth: 320, videoHeight: 240)
+        
+        for(_, _handler) in _rtcHandlers {
+            _handler.add(videoTrack: self.rtcMedia.videoTrack, audioTrack: self.rtcMedia.audioTrack)
+            if(!isDial) {
+                _handler.createOffer()
+            }
+        }
+    }
+    
     func phoneViewOpen(isDial:Bool, isVideo:Bool) {
-        roomData.setInfo(msgType: isVideo ? "2" : "1", pickupTime: 0.0, hungUpTime: 0.0, isDial: isDial)
+        roomData.setInfo(msgType: isVideo ? "2" : "1"
+            , isDial: isDial
+            , phoneStartTime: Date.init().timestamp
+            , phoneStopTime: 0
+            , phonePickupTime: 0
+            , phoneHungUpTime: 0)
+        
         invokeDelegate(name: "onImPhoneShow", args: [isDial, isVideo])
     }
 }
@@ -219,7 +294,7 @@ public class IMService : NSObject {
     @objc optional func onImPhoneShow(sender:IMService, isDial:Bool, isVideo:Bool)
     
     /// 收到電話訊號觸發
-    @objc optional func onImPhoneAction(sender:IMService, isVideo:Bool, action:String)
+    @objc optional func onImPhoneAction(sender:IMService, isVideo:Bool, args:Array<String>)
 }
 
 /** ==============================================================================================
@@ -233,6 +308,14 @@ extension IMService : SignHandlerDelegate {
         // 回傳使用者名稱
         let _userName = _roomInfo.userType == "1" ? _roomInfo.tName : _roomInfo.oName
         sender.invoke("settUser", withArgs: [_userName])
+        
+        //
+        let _size = self._promiseSignConnected.count-1
+        if(_size > -1) {
+            for _ in 0..._size {
+                self._promiseSignConnected.remove(at: 0)()
+            }
+        }
     }
     
     ///訊號離線觸發
@@ -245,7 +328,7 @@ extension IMService : SignHandlerDelegate {
         switch eventName {
         case "onTextMessage":
             guard ("\(_roomInfo.tNo)_\(_roomInfo.oNo)_\(_roomInfo.uNo)_\(_roomInfo.eNo)" == "\(args[1])_\(args[2])_\(args[3])_\(args[4])") else { return }
-            invokeDelegate(name: "onImMessage", args: ["0", args[5]])
+            invokeDelegate(name: "onImMessage", args: ["0", self.getUserMsgLog(msgType: "0", msg: args[5])])
             break
             
         case "onNotifyUser":
@@ -285,30 +368,64 @@ extension IMService : SignHandlerDelegate {
             break
             
         case "onPhoneCall", "onVideoCall":
+            let _isVideo = eventName == "onVideoCall" ? true : false
+            let _msgType = _isVideo ? "2" : "1"
+            let _phoneTime = Date.init().timestamp
+            var _duringTime = 0
+            
             switch(args[0]) {
             case "dial":
                 break
+                
             case "show":
+                self.doCallPhone(isVideo: _isVideo, action: args[0])
                 break
+                
             case "pickup":
-                roomData.setInfo(pickupTime: Date.init().timeIntervalSince1970)
+                RTCAudioSession.sharedInstance().isAudioEnabled = true
+                roomData.setInfo(phonePickupTime: _phoneTime)
                 break
+                
             case "hangup":
-                if(roomData.pickupTime > 0) {
-                    roomData.setInfo(hungUpTime: Date.init().timeIntervalSince1970)
+                RTCAudioSession.sharedInstance().isAudioEnabled = false
+                
+                //清除使用資源
+                self.setProxyRenderer(local: nil, remote: nil)
+                rtcMedia.clearLocalStream()
+                for(_, _handler) in _rtcHandlers {
+                    _handler.clearStream()
+                }
+                
+                //設定通話資訊
+                roomData.setInfo(phoneStopTime: _phoneTime)
+                if(roomData.phonePickupTime > 0) {
+                    roomData.setInfo(phoneHungUpTime: _phoneTime)
+                    _duringTime = roomData.phoneHungUpTime - roomData.phonePickupTime
+                    _duringTime = Int(Double.init(_duringTime) / 1000.0)
                 }
                 
                 //撥號方須傳送撥號資訊
                 if(roomData.isDial) {
                     sendMessage(type: roomData.msgType)
                 }
+                
+                //將訊息送給使用者介面
+                invokeDelegate(name: "onImMessage", args: [_msgType
+                    , self.getUserMsgLog(msgType: _msgType
+                        , msg: ""
+                        , whoTalk: roomData.isDial ? "1" : "0"
+                        , duringTime: _duringTime
+                    )])
                 break
+                
             case "changevideo":
+                roomData.setInfo(msgType: "2")
                 break
+                
             default:
                 break
             }
-            invokeDelegate(name: "onImPhoneAction", args: [eventName == "onVideoCall" ? true : false , args[0]])
+            invokeDelegate(name: "onImPhoneAction", args: [_isVideo , args])
             break
             
         default:
@@ -338,6 +455,11 @@ extension IMService : RtcHandlerDelegate {
     
     ///遠端 stream 新增或移除會觸發
     func onRtcStream(sender:RtcHandler, type:String, stream:RTCMediaStream) {
+        if(type == "add") {
+            if(stream.videoTracks.count > 0) {
+                self._remoteProxy.set(track:stream.videoTracks[0])
+            }
+        }
     }
     
     ///ice 連接狀態改變會觸發
@@ -345,10 +467,10 @@ extension IMService : RtcHandlerDelegate {
         switch newState {
         case RTCIceConnectionState.connected, RTCIceConnectionState.completed:
             _isIceConnected = true
-            let _size = self._promiseConnected.count-1
+            let _size = self._promiseRtcConnected.count-1
             if(_size > -1) {
                 for _ in 0..._size {
-                    self._promiseConnected.remove(at: 0)()
+                    self._promiseRtcConnected.remove(at: 0)()
                 }
             }
             break
@@ -365,7 +487,7 @@ extension IMService : RtcHandlerDelegate {
             var _candidate = Dictionary<String, String>()
             _candidate["candidate"] = candidate.sdp
             _candidate["sdpMid"] = candidate.sdpMid
-            _candidate["sdpMid"] = "\(candidate.sdpMLineIndex)"
+            _candidate["sdpMLineIndex"] = "\(candidate.sdpMLineIndex)"
             guard let _json = utility.convertToJson(of: ["candidate":_candidate]) else { return }
             signInvoke(method: "rtcSend", withArgs: [sender.connectionId, _json])
         }

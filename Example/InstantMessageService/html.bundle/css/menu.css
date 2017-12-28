@@ -1,0 +1,80 @@
+﻿*{ margin: 0; padding: 0;}
+a, img{ border: none; display: block;}
+a{ text-decoration: none; color: #1b81cf; outline: none;}
+body{ font: 15px/1.62 "ITC Avant Garde Gothic","微軟正黑體", Verdana, Arial, Helvetica, sans-serif;}
+
+ol, ul {
+    list-style: none;
+}
+
+#sidebar .active * {
+	color: #1aa1da!important;
+}
+#sidebar .sidetitle{
+	position: relative;
+	height: 60px;
+	line-height: 60px;
+	background: #419ede;
+	color: #FFF;
+	font-size: 16px;
+}
+#sidebar .sidetitle .showico{
+	display: block;
+	float: left;
+    width: 26px;
+    height: 21px;
+    background: url(../images/chact_ico.png) 0 0;
+	margin: 20px 28% 20px 15px;
+}
+#sidebar .list {
+	width: 100%;
+}
+#sidebar .list li 
+{
+    position: relative;
+	text-align: left;
+	padding: .5em;
+	border-bottom: 1px solid #f4f4f4;
+}
+
+#sidebar .list li:last-child {
+	border-bottom: 0;
+}
+
+.talkLog > li > div {
+    display: flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.talkLog h6 
+{
+    position: relative;
+	font-size: 16px;
+	color: #a7a7a7;
+	white-space:nowrap;
+	overflow:hidden;
+	text-overflow:ellipsis;
+	font-weight: bolder;
+}
+
+.talkLog .date{
+	font-size: 13px;
+	color: #d1d2d2;
+}
+
+.talkLog .jobs {
+	color: #c7c7c7;
+	white-space:nowrap;
+	overflow:hidden;
+	text-overflow:ellipsis;
+}
+
+input[type="text"], select {
+    border: 1px solid #e8e8e8;
+    padding: 0 10px;
+    border-radius: 4px;
+    line-height: 28px;
+    height: 28px;
+    outline: none;
+}

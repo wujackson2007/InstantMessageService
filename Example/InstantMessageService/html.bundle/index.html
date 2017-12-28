@@ -1,0 +1,203 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, minimal-ui" />
+    <title></title>
+    <link href="css/index.css?v=17101801" rel="stylesheet" />
+    <script src='js/jquery-1.8.2.min.js'></script>
+    <script src="js/json2.js"></script>
+    <script src='js/base.js?v=17101801'></script>
+    <script>
+        var messageLoop = [];
+        var chatLoop = {};
+        var _chatBoxOnScroll = false;
+        var $chactbox,
+            $document,
+            $body,
+            $footer,
+            $msgInput,
+            aa
+        ;
+
+        $(document).ready(function () {
+            $document = $(document);
+            $body = $('body');
+            $chactbox = $('.chactbox');
+            $footer = $('footer');
+            $msgInput = $('#msgInput');
+
+            $(window).on('scroll', function (ev) {
+                //trace({ doc:$document.scrollTop(), body:$body.scrollTop(), chactbox:$chactbox.scrollTop() });
+                if (!_chatBoxOnScroll && $body.scrollTop() == 0) {
+                    _chatBoxOnScroll = true;
+                    if ($chactbox.data('noData') != '1') {
+                        var msgDate = $chactbox.find('.dateline:eq(0)').data('date');
+                        if (msgDate != undefined && msgDate != "") {
+                            $chactbox.prepend('<li class="scrollMsg"><img src="images/loading.gif" style="margin:0 auto;width:40px;height:40px;" /></li>');
+                            invokeSrApi("invoke://chatMessageLoadByDate?" + msgDate);
+                        }
+                    }
+                }
+            });
+
+            $('[data-cmd]').on('click', function (ev) {
+                var _target = ev.currentTarget;
+                var _cmd = $(_target).attr('data-cmd');
+                var _tag, _fn;
+                switch (_cmd) {
+                    case "btnSend": //訊息按鈕
+                        $msgInput.each(function () {
+                            var msg = $(this).val();
+                            if (msg != '') {
+                                $(this).val('');
+                                invokeSrApi("invoke://sendTextMessage?" + msg);
+                            }
+                        });
+                        break;
+                }
+            });
+        });
+
+        function getPrettyTime(ticks) {
+            var o_val = "";
+            var diff = ticks;
+            var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            diff -= days * (1000 * 60 * 60 * 24);
+            var hours = Math.floor(diff / (1000 * 60 * 60));
+            diff -= hours * (1000 * 60 * 60);
+            var mins = Math.floor(diff / (1000 * 60));
+            diff -= mins * (1000 * 60);
+            var seconds = Math.floor(diff / (1000));
+            diff -= seconds * (1000);
+
+            if (hours > 0)
+                o_val += hours + '時';
+
+            if (mins > 0)
+                o_val += mins + '分';
+
+            if (seconds > 0)
+                o_val += seconds + '秒';
+
+            return o_val;
+        };
+
+        function scrollBottom() {
+            _chatBoxOnScroll = true;
+            setTimeout(function () {
+                $('body').each(function () {
+                    trace('scrollTop:' + $(this).prop('scrollTop'));
+
+                    $(this).prop('scrollTop', $(this).prop('scrollHeight'));
+                    _chatBoxOnScroll = false;
+                });
+            }, 1000);
+        }
+
+        function chatMessageLoad(jsonVal, type, isClear) {
+            var i, j, dateIn, html = "";
+            var $root = $chactbox;
+
+            if (isClear == '1') {
+                chatLoop = {};
+                $root.html('');
+            }
+
+            //trace({ type: type, jsonVal: jsonVal[0] });
+            //rs = JSON.parse(jsonVal);
+            rs = jsonVal[0]
+            if (rs != undefined && rs != null) {
+                try {
+                    for (i = 0; i < rs.length; i++) {
+                        var r = rs[i];
+                        var numDate = r["dateIn"].left(10).replace(/-/g, "").replace(/\//g, "");
+                        var msgDate = r["dateIn"].left(10).replace(/-/g, "/");
+                        var msgTime = r["dateIn"].right(8);
+                        var duringTime;
+
+                        if (chatLoop[numDate] == undefined) {
+                            chatLoop[numDate] = [];
+                            html += '<li class="dateline" data-date="{0}"><p>{0}</p><span class="line"></span></li>'.format(msgDate);
+                        }
+
+                        //訊息類型：0-文字; 1-通話; 2-視訊; 3-圖片; 4-檔案
+                        switch (r["msgType"]) {
+                            case 0:
+                                if (r["whoTalk"] == 1)
+                                    html += '<li class="tright"><div class="time">{0}</div><p>{1}</p></li>'.format(msgTime, r["msgLog"].replace(/[\r\n]/g, "<br/>"));
+                                else
+                                    html += '<li class="tleft"><p>{0}</p><div class="time">{1}</div></li>'.format(r["msgLog"].replace(/[\r\n]/g, "<br/>"), msgTime);
+                                break;
+
+                            case 1:
+                                duringTime = r["duringTime"] > 0 ? ("語音通話：" + getPrettyTime(r["duringTime"] * 1000)) : (r["whoTalk"] == 1 ? "取消" : "無回應");
+                                if (r["whoTalk"] == 1)
+                                    html += '<li class="tright"><div class="time">{0}</div><p class="radiusR15"><span class="tel_del"></span>{1}</p></li>'.format(msgTime, duringTime);
+                                else
+                                    html += '<li class="tleft"><p class="radiusL15"><span class="tel_del"></span>{0}</p><div class="time">{1}</div></li>'.format(duringTime, msgTime);
+                                break;
+
+                            case 2:
+                                duringTime = r["duringTime"] > 0 ? ("視訊通話：" + getPrettyTime(r["duringTime"] * 1000)) : (r["whoTalk"] == 1 ? "取消" : "無回應");
+                                if (r["whoTalk"] == 1)
+                                    html += '<li class="tright"><div class="time">{0}</div><p class="radiusR15"><span class="video_del"></span>{1}</p></li>'.format(msgTime, duringTime);
+                                else
+                                    html += '<li class="tleft"><p class="radiusL15"><span class="video_del"></span>{0}</p><div class="time">{1}</div></li>'.format(duringTime, msgTime);
+                                break;
+
+                            case 3:
+                                if (r["whoTalk"] == 1)
+                                    html += '<li class="tright"><div class="time">{0}</div><p class="radiusR15"><span class="sendimgs"><img src="images/pic03.jpg"></span></p></li>'.format(msgTime);
+                                else
+                                    html += '<li class="tleft"><p class="radiusL15"><span class="sendimgs"><img src="images/pic03.jpg"></span></p><div class="time">{0}</div></li>'.format(msgTime);
+                                break;
+
+                            case 4:
+                                if (r["whoTalk"] == 1)
+                                    html += '<li class="tright"><div class="time">{0}</div><p class="sendfiles radiusR15"><a href="" class="files"><span class="filesico"></span></a><span class="filename">{1}</span><span class="loadfiles"><span class="load"></span></span><a href="" class="delete"></a></p></li>'.format(msgTime, r["fileName"]);
+                                else
+                                    html += '<li class="tleft"><p class="sendfiles radiusL15"><a href="" class="files"><span class="filesico"></span></a><span class="filename">{0}</span><span class="loadfiles"><span class="load"></span></span><a href="" class="delete"></a></p><div class="time">{1}</div></li>'.format(r["fileName"], msgTime);
+                                break;
+                        }
+                    }
+                } catch (err) {
+                    trace({ error: err });
+                }
+            }
+
+            if (html != "") {
+                if (type == 'up') {
+                    $root.prepend(html);
+                }
+                else {
+                    $root.append(html);
+                    scrollBottom();
+                }
+            }
+
+            if (type == 'up') {
+                $body.scrollTop(10);
+                _chatBoxOnScroll = false;
+                $('.scrollMsg').remove();
+
+                if (html == "")
+                    $chactbox.data('end', "1");
+            }
+        }
+    </script>
+</head>
+<body>
+    <ul class="chactbox">
+        <!--
+        <li class="dateline" data-date="2017/10/12"><p>2017/10/12</p><span class="line"></span></li><li class="tright"><div class="time">10:03:59</div><p>11</p></li><li class="tright"><div class="time">10:05:38</div><p>11</p></li><li class="tright"><div class="time">10:05:41</div><p>22</p></li><li class="tleft"><p>11</p><div class="time">10:05:50</div></li><li class="tleft"><p>22</p><div class="time">10:05:55</div></li><li class="tright"><div class="time">10:06:37</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">10:06:58</div><p class="radiusR15"><span class="video_del"></span>視訊通話：7秒</p></li><li class="tright"><div class="time">10:07:07</div><p>11</p></li><li class="tright"><div class="time">10:07:11</div><p>22</p></li><li class="tright"><div class="time">10:08:01</div><p>11</p></li><li class="tright"><div class="time">10:08:03</div><p>22</p></li><li class="tright"><div class="time">10:08:26</div><p class="radiusR15"><span class="video_del"></span>視訊通話：6秒</p></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">10:08:40</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">10:08:46</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">10:08:48</div></li><li class="tright"><div class="time">10:09:04</div><p class="radiusR15"><span class="video_del"></span>視訊通話：4秒</p></li><li class="tright"><div class="time">10:09:35</div><p>11</p></li><li class="tright"><div class="time">10:09:38</div><p>22</p></li><li class="tleft"><p>11</p><div class="time">10:09:43</div></li><li class="tleft"><p>22</p><div class="time">10:09:46</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">10:09:56</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">10:10:00</div></li><li class="tright"><div class="time">10:10:57</div><p class="radiusR15"><span class="video_del"></span>視訊通話：3秒</p></li><li class="tleft"><p>11</p><div class="time">10:12:30</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">10:12:39</div></li><li class="tleft"><p>11</p><div class="time">10:13:19</div></li><li class="tleft"><p>11</p><div class="time">10:14:14</div></li><li class="tleft"><p>22</p><div class="time">10:14:51</div></li><li class="tright"><div class="time">10:14:51</div><p>11</p></li><li class="tright"><div class="time">10:15:09</div><p class="radiusR15"><span class="video_del"></span>視訊通話：9秒</p></li><li class="tright"><div class="time">10:15:29</div><p>11</p></li><li class="tleft"><p>22</p><div class="time">10:15:32</div></li><li class="tleft"><p>11</p><div class="time">10:17:22</div></li><li class="tleft"><p>11</p><div class="time">10:21:41</div></li><li class="tleft"><p>11</p><div class="time">10:22:06</div></li><li class="tleft"><p>11</p><div class="time">10:22:53</div></li><li class="tleft"><p>11</p><div class="time">10:23:13</div></li><li class="tleft"><p>11</p><div class="time">10:23:23</div></li><li class="tleft"><p>11</p><div class="time">10:28:50</div></li><li class="tleft"><p>11</p><div class="time">10:29:25</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">10:36:12</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">10:37:54</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>視訊通話：3秒</p><div class="time">10:38:29</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>視訊通話：4秒</p><div class="time">10:39:12</div></li><li class="tright"><div class="time">10:39:26</div><p>11</p></li><li class="tright"><div class="time">10:39:28</div><p>22</p></li><li class="tleft"><p>11</p><div class="time">10:39:31</div></li><li class="tleft"><p>22</p><div class="time">10:39:33</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>視訊通話：39秒</p><div class="time">10:40:27</div></li><li class="tright"><div class="time">10:41:07</div><p>11</p></li><li class="tright"><div class="time">10:41:12</div><p>22</p></li><li class="tleft"><p>11</p><div class="time">10:41:17</div></li><li class="tleft"><p>22</p><div class="time">10:41:32</div></li><li class="tright"><div class="time">10:41:43</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">10:42:01</div><p>11</p></li><li class="tright"><div class="time">10:42:04</div><p>22</p></li><li class="tright"><div class="time">10:42:22</div><p class="radiusR15"><span class="video_del"></span>視訊通話：3秒</p></li><li class="tright"><div class="time">10:42:29</div><p class="radiusR15"><span class="video_del"></span>視訊通話：2秒</p></li><li class="tright"><div class="time">10:42:39</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">10:42:48</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">10:43:15</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">10:44:10</div><p>11</p></li><li class="tright"><div class="time">10:44:12</div><p>22</p></li><li class="tleft"><p>11</p><div class="time">10:44:17</div></li><li class="tleft"><p>22</p><div class="time">10:44:19</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">10:44:26</div></li><li class="tright"><div class="time">10:44:57</div><p>11</p></li><li class="tleft"><p>22</p><div class="time">10:45:03</div></li><li class="tright"><div class="time">10:45:46</div><p>11</p></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">10:46:22</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>視訊通話：4秒</p><div class="time">10:46:41</div></li><li class="tleft"><p>11</p><div class="time">10:49:06</div></li><li class="tleft"><p>22</p><div class="time">10:49:29</div></li><li class="tleft"><p>11</p><div class="time">10:55:17</div></li><li class="tleft"><p>11</p><div class="time">10:55:28</div></li><li class="tleft"><p>22</p><div class="time">10:55:30</div></li><li class="tleft"><p>11</p><div class="time">10:56:07</div></li><li class="tleft"><p>22</p><div class="time">10:56:12</div></li><li class="tright"><div class="time">11:06:34</div><p>11</p></li><li class="tleft"><p>22</p><div class="time">11:06:37</div></li><li class="tleft"><p>11</p><div class="time">11:06:55</div></li><li class="tleft"><p>11</p><div class="time">11:19:01</div></li><li class="tleft"><p>11</p><div class="time">11:34:04</div></li><li class="tleft"><p>11</p><div class="time">11:34:31</div></li><li class="tleft"><p>11</p><div class="time">11:36:07</div></li><li class="tleft"><p>11</p><div class="time">11:38:21</div></li><li class="tleft"><p>11</p><div class="time">11:38:51</div></li><li class="tleft"><p>11</p><div class="time">11:39:30</div></li><li class="tleft"><p>11</p><div class="time">11:40:02</div></li><li class="tleft"><p>11</p><div class="time">11:40:29</div></li><li class="tleft"><p>11</p><div class="time">11:41:53</div></li><li class="tleft"><p>11</p><div class="time">11:42:28</div></li><li class="tleft"><p>11</p><div class="time">12:00:49</div></li><li class="tleft"><p>22</p><div class="time">12:01:00</div></li><li class="tleft"><p>33</p><div class="time">12:01:06</div></li><li class="tleft"><p>11</p><div class="time">12:01:51</div></li><li class="tleft"><p>22</p><div class="time">12:02:46</div></li><li class="tleft"><p>33</p><div class="time">12:03:01</div></li><li class="tleft"><p>11</p><div class="time">13:32:15</div></li><li class="tleft"><p>22</p><div class="time">13:32:21</div></li><li class="tright"><div class="time">14:21:43</div><p>11</p></li><li class="tright"><div class="time">14:23:00</div><p>11</p></li><li class="tright"><div class="time">14:23:03</div><p>22</p></li><li class="tright"><div class="time">14:23:45</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">14:24:09</div></li><li class="tright"><div class="time">14:24:55</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">14:26:35</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">14:27:52</div></li><li class="tright"><div class="time">14:42:32</div><p>11</p></li><li class="tright"><div class="time">14:43:23</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">14:44:45</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">14:45:29</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">14:45:31</div><p>11</p></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">14:45:31</div></li><li class="tleft"><p>22</p><div class="time">14:45:31</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>視訊通話：9秒</p><div class="time">14:46:20</div></li><li class="tright"><div class="time">14:46:47</div><p>11</p></li><li class="tleft"><p>22</p><div class="time">14:46:52</div></li><li class="tright"><div class="time">14:47:09</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">14:47:15</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">14:47:54</div></li><li class="tright"><div class="time">14:50:11</div><p>11</p></li><li class="dateline" data-date="2017/10/13"><p>2017/10/13</p><span class="line"></span></li><li class="tright"><div class="time">09:06:35</div><p>11</p></li><li class="tright"><div class="time">09:16:34</div><p>11</p></li><li class="tleft"><p>22</p><div class="time">09:16:42</div></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>無回應</p><div class="time">09:17:04</div></li><li class="tright"><div class="time">09:18:07</div><p class="radiusR15"><span class="video_del"></span>視訊通話：20秒</p></li><li class="tright"><div class="time">09:18:31</div><p class="radiusR15"><span class="video_del"></span>視訊通話：11秒</p></li><li class="tright"><div class="time">09:19:19</div><p>11</p></li><li class="tleft"><p class="radiusL15"><span class="video_del"></span>視訊通話：13秒</p><div class="time">09:19:50</div></li><li class="tright"><div class="time">09:20:36</div><p class="radiusR15"><span class="video_del"></span>視訊通話：17秒</p></li><li class="dateline" data-date="2017/10/14"><p>2017/10/14</p><span class="line"></span></li><li class="tright"><div class="time">13:14:00</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">13:14:03</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">13:14:19</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">13:15:38</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">13:15:53</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="tright"><div class="time">13:15:58</div><p class="radiusR15"><span class="video_del"></span>取消</p></li><li class="dateline" data-date="2017/10/16"><p>2017/10/16</p><span class="line"></span></li><li class="tleft"><p>123</p><div class="time">23:38:01</div></li><li class="tleft"><p>123</p><div class="time">23:39:32</div></li><li class="tleft"><p>11</p><div class="time">23:44:25</div></li><li class="tleft"><p>1</p><div class="time">23:57:51</div></li><li class="dateline" data-date="2017/10/17"><p>2017/10/17</p><span class="line"></span></li><li class="tleft"><p>11</p><div class="time">00:11:30</div></li><li class="tleft"><p>11</p><div class="time">00:13:23</div></li><li class="tleft"><p>11</p><div class="time">00:34:07</div></li><li class="tleft"><p>11</p><div class="time">00:42:44</div></li><li class="tleft"><p>22</p><div class="time">00:46:05</div></li><li class="tleft"><p>22</p><div class="time">00:49:50</div></li><li class="tleft"><p>11</p><div class="time">00:52:56</div></li><li class="tleft"><p>22</p><div class="time">00:59:56</div></li><li class="tleft"><p>22</p><div class="time">01:02:46</div></li><li class="tleft"><p>22</p><div class="time">01:05:33</div></li><li class="tleft"><p>11</p><div class="time">01:11:23</div></li><li class="tleft"><p>hello</p><div class="time">09:40:15</div></li><li class="tleft"><p>11</p><div class="time">09:49:04</div></li><li class="tleft"><p>11</p><div class="time">10:00:03</div></li><li class="tleft"><p>22</p><div class="time">10:00:42</div></li><li class="tleft"><p>11</p><div class="time">10:11:30</div></li><li class="tleft"><p>11</p><div class="time">10:56:24</div></li><li class="tleft"><p>22</p><div class="time">13:53:58</div></li>
+        -->
+    </ul>
+    <div class="footerSpace" style="height:60px">　</div>
+    <footer class="fixed-bottom" style="background-color:#efefef">
+        <textarea id="msgInput"></textarea>
+        <div><a href="javascript:void(0)" data-cmd="btnSend">傳送</a></div>
+    </footer>
+</body>
+</html>

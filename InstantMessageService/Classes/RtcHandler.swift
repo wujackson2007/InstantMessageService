@@ -13,8 +13,11 @@ class RtcHandler : NSObject {
     private var _connectionId:String = ""
     private final var _remoteCandidates:Array<RTCIceCandidate> = []
     final var _promiseConnected:Array<(RtcHandler)->Void> = []
+    final var _remoteStreams:Array<RTCMediaStream> = []
     var _delegate:RtcHandlerDelegate?
-
+    var _dataChannel:RTCDataChannel?
+    var _localStream:RTCMediaStream?
+    
     private var connectLogId : String {
         get { return _connectionId }
     }
@@ -97,7 +100,41 @@ class RtcHandler : NSObject {
         }
     }
     
-    func createOffer(option:Dictionary<String,String>? = nil, onConnected:((RtcHandler)->Void)?) -> Void {
+    ///
+    func add(videoTrack:RTCVideoTrack? = nil, audioTrack:RTCAudioTrack? = nil) -> Void {
+        guard (videoTrack != nil || audioTrack != nil) else { return }
+        if(_localStream == nil) {
+            _localStream = _factory!.mediaStream(withStreamId: "\(UUID.init().uuidString)")
+            
+            if(videoTrack != nil) {
+                _localStream!.addVideoTrack(videoTrack!)
+            }
+            
+            if(audioTrack != nil) {
+                _localStream!.addAudioTrack(audioTrack!)
+            }
+            
+            _connection!.add(_:_localStream!)
+        }
+    }
+    
+    ///
+    func clearStream() -> Void {
+        if(_localStream != nil) {
+            _connection!.remove(_:_localStream!)
+            _localStream = nil
+        }
+        
+        while _remoteStreams.count > 0 {
+            _connection!.remove(_remoteStreams.remove(at: 0))
+        }
+        
+        for (r) in _connection!.receivers {
+            r.track.isEnabled = false
+        }
+    }
+    
+    func createOffer(option:Dictionary<String,String>? = nil, onConnected:((RtcHandler)->Void)? = nil) -> Void {
         self.createLocalDescription(type: "offer", option: option, onConnected: onConnected)
     }
     
@@ -106,22 +143,32 @@ class RtcHandler : NSObject {
     }
     
     private func createLocalDescription(type:String
-        , option:Dictionary<String,String>? = ["OfferToReceiveAudio" : "true", "OfferToReceiveVideo" : "true"]
+        , option:Dictionary<String,String>? = nil
         , onConnected:((RtcHandler)->Void)? = nil) {
         
         if(onConnected != nil) {
             self._promiseConnected.append(onConnected!)
         }
         
-        let defaultOfferConstraints = RTCMediaConstraints.init(mandatoryConstraints: option, optionalConstraints: nil)
+        var _option = option != nil ? option! : ["OfferToReceiveAudio" : "true", "OfferToReceiveVideo" : "true"]
+        if(type == "offer") {
+            _option["iceRestart"] = "true"
+        }
+        
+        let defaultOfferConstraints = RTCMediaConstraints.init(mandatoryConstraints: _option, optionalConstraints: nil)
         let _fn = { (desc:RTCSessionDescription?, error:Error?) in
             guard (error == nil) else { return }
             self.connection.setLocalDescription(desc!, completionHandler: { (error:Error?) in
                 guard (error == nil) else { return }
+                print("=== [\(self.connectLogId)] setLocalDescription:[\(type)] ===\r\n")
                 if(self._delegate != nil) {
                     self._delegate!.onRtcDescription(sender:self, type:"local", sdp:desc!)
                 }
             })
+        }
+        
+        if(_dataChannel == nil) {
+            _dataChannel = _connection!.dataChannel(forLabel: "message", configuration: RTCDataChannelConfiguration.init())
         }
         
         if(type == "offer") {
@@ -150,10 +197,12 @@ protocol RtcHandlerDelegate : NSObjectProtocol {
 //pragma mark - RTCPeerConnectionDelegate
 extension RtcHandler : RTCPeerConnectionDelegate {
     @objc func peerConnectionShouldNegotiate(_ peerConnection: RTCPeerConnection) {}
-    @objc func peerConnection(_ peerConnection: RTCPeerConnection, didOpen dataChannel: RTCDataChannel) {}
     @objc func peerConnection(_ peerConnection: RTCPeerConnection, didChange newState: RTCIceGatheringState) {}
     @objc func peerConnection(_ peerConnection: RTCPeerConnection, didChange stateChanged: RTCSignalingState) {}
     @objc func peerConnection(_ peerConnection: RTCPeerConnection, didRemove candidates: [RTCIceCandidate]) {}
+    @objc func peerConnection(_ peerConnection: RTCPeerConnection, didOpen dataChannel: RTCDataChannel) {
+        _dataChannel = dataChannel
+    }
     @objc func peerConnection(_ peerConnection: RTCPeerConnection, didGenerate candidate: RTCIceCandidate) {
         if(_delegate != nil) {
             _delegate!.onRtcCandidate(sender:self, type:"add", candidate:candidate)
@@ -161,6 +210,7 @@ extension RtcHandler : RTCPeerConnectionDelegate {
     }
     
     @objc func peerConnection(_ peerConnection: RTCPeerConnection, didAdd stream: RTCMediaStream) {
+        _remoteStreams.append(stream)
         if(_delegate != nil) {
             _delegate!.onRtcStream(sender:self, type:"add", stream:stream)
         }

@@ -20,8 +20,10 @@ public class RoomInfo : NSObject {
     private var _eName:String = ""
     private var _msg:String = ""
     private var _msgType:String = ""
-    private var _pickupTime:Double = 0.0
-    private var _hungUpTime:Double = 0.0
+    private var _phoneStartTime:Int = 0
+    private var _phoneStopTime:Int = 0
+    private var _phonePickupTime:Int = 0
+    private var _phoneHungUpTime:Int = 0
     private var _isDial:Bool = false
     
     ///使用者類型: 1_求職者, 2_公司廠商
@@ -56,10 +58,14 @@ public class RoomInfo : NSObject {
     public var isDial:Bool { get { return _isDial } }
     /// 是否為視訊
     public var isVideo:Bool { get { return _msgType == "2" ? true : false } }
+    /// 來電開始時間
+    public var phoneStartTime:Int { get { return _phoneStartTime } }
+    /// 來電結束時間
+    public var phoneStopTime:Int { get { return _phoneStopTime } }
     /// 接聽時間
-    public var pickupTime:Double { get { return _pickupTime } }
+    public var phonePickupTime:Int { get { return _phonePickupTime } }
     /// 掛斷時間
-    public var hungUpTime:Double { get { return _hungUpTime } }
+    public var phoneHungUpTime:Int { get { return _phoneHungUpTime } }
     
     /// 設定當資料變動時通知
     public func setDelegate(key:String, delegate:RoomInfoDelegate) -> Void {
@@ -73,82 +79,94 @@ public class RoomInfo : NSObject {
     }
     
     public func setInfo(userType:Any? = nil, cid:Any? = nil, tNo:Any? = nil, tName:Any? = nil, oNo:Any? = nil, oName:Any? = nil, uNo:Any? = nil, eNo:Any? = nil, eName:Any? = nil
-        , msg:Any? = nil, msgType:Any? = nil, pickupTime:Any? = nil, hungUpTime:Any? = nil, isDial:Any? = nil)
+        , msg:Any? = nil, msgType:Any? = nil, isDial:Any? = nil, phoneStartTime:Any? = nil, phoneStopTime:Any? = nil, phonePickupTime:Any? = nil, phoneHungUpTime:Any? = nil)
     {
-        var _fields:Array<String> = []
-        if(userType != nil) {
-            _userType = (userType as AnyObject).description
-            _fields.append("userType")
-        }
-        
-        if(cid != nil) {
-            _cid = (cid as AnyObject).description
-            _fields.append("cid")
-        }
-        
-        if(tNo != nil) {
-            _tNo = (tNo as AnyObject).description
-            _fields.append("tNo")
-        }
-        
-        if(tName != nil) {
-            _tName = (tName as AnyObject).description
-            _fields.append("tName")
-        }
-        
-        if(oNo != nil) {
-            _oNo = (oNo as AnyObject).description
-            _fields.append("oNo")
-        }
-        
-        if(oName != nil) {
-            _oName = (oName as AnyObject).description
-            _fields.append("oName")
-        }
-        
-        if(uNo != nil) {
-            _uNo = (uNo as AnyObject).description
-            _fields.append("uNo")
-        }
-        
-        if(eNo != nil) {
-            _eNo = (eNo as AnyObject).description
-            _fields.append("eNo")
-        }
-        
-        if(eName != nil) {
-            _eName = (eName as AnyObject).description
-            _fields.append("empName")
-        }
-        
-        if(msg != nil) {
-            _msg = (msg as AnyObject).description
-            _fields.append("msg")
-        }
-        
-        if(msgType != nil) {
-            _msgType = (msgType as AnyObject).description
-            _fields.append("msgType")
-        }
-        
-        if(pickupTime != nil) {
-            _pickupTime = pickupTime as! Double
-            _fields.append("pickupTime")
-        }
-        
-        if(hungUpTime != nil) {
-            _hungUpTime = hungUpTime as! Double
-            _fields.append("hungUpTime")
-        }
-        
-        if(isDial != nil) {
-            _isDial = isDial as! Bool
-            _fields.append("isDial")
-        }
-        
-        if(_fields.count > 0) {
-            for (_, _delegate) in _delegates {
-                _delegate.onChange(sender:self, fields:_fields)
+        utility.synchronized(lock: self) {
+            var _fields:Array<String> = []
+            if(userType != nil) {
+                _userType = (userType as AnyObject).description
+                _fields.append("userType")
+            }
+            
+            if(cid != nil) {
+                _cid = (cid as AnyObject).description
+                _fields.append("cid")
+            }
+            
+            if(tNo != nil) {
+                _tNo = (tNo as AnyObject).description
+                _fields.append("tNo")
+            }
+            
+            if(tName != nil) {
+                _tName = (tName as AnyObject).description
+                _fields.append("tName")
+            }
+            
+            if(oNo != nil) {
+                _oNo = (oNo as AnyObject).description
+                _fields.append("oNo")
+            }
+            
+            if(oName != nil) {
+                _oName = (oName as AnyObject).description
+                _fields.append("oName")
+            }
+            
+            if(uNo != nil) {
+                _uNo = (uNo as AnyObject).description
+                _fields.append("uNo")
+            }
+            
+            if(eNo != nil) {
+                _eNo = (eNo as AnyObject).description
+                _fields.append("eNo")
+            }
+            
+            if(eName != nil) {
+                _eName = (eName as AnyObject).description
+                _fields.append("empName")
+            }
+            
+            if(msg != nil) {
+                _msg = (msg as AnyObject).description
+                _fields.append("msg")
+            }
+            
+            if(msgType != nil) {
+                _msgType = (msgType as AnyObject).description
+                _fields.append("msgType")
+            }
+            
+            if(phoneStartTime != nil) {
+                _phoneStartTime = phoneStartTime as! Int
+                _fields.append("phoneStartTime")
+            }
+            
+            if(phoneStopTime != nil) {
+                _phoneStopTime = phoneStopTime as! Int
+                _fields.append("phoneStopTime")
+            }
+            
+            if(phonePickupTime != nil) {
+                _phonePickupTime = phonePickupTime as! Int
+                _fields.append("phonePickupTime")
+            }
+            
+            if(phoneHungUpTime != nil) {
+                _phoneHungUpTime = phoneHungUpTime as! Int
+                _fields.append("phoneHungUpTime")
+            }
+            
+            if(isDial != nil) {
+                _isDial = isDial as! Bool
+                _fields.append("isDial")
+            }
+            
+            if(_fields.count > 0) {
+                for (_, _delegate) in _delegates {
+                    _delegate.onChange(sender:self, fields:_fields)
+                }
             }
         }
     }

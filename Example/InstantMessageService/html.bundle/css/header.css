@@ -1,0 +1,137 @@
+﻿body {
+    margin: 0 auto;
+}
+#maincon{
+	position: relative;
+}
+header {
+	height: 60px;
+	font-size: 15px;
+	color: #FFF;
+	background: #eaeaea;
+	overflow: hidden;
+    display:flex;
+}
+header .Lset{
+    background: #4fc5f7;
+	position: relative;
+    display:flex;
+    align-items:center;
+    width:50%;
+}
+header .Lset .listico {
+	width: 26px;
+	height: 21px;
+	background: url(../images/chact_ico.png) 0 0;
+    float:right;
+}
+header .newMessage {
+	color:red;
+	font-size:10pt;
+	width: 2.5em;
+	height: 16px;
+	position: absolute;
+	top:3px;
+	left:6px;
+}
+header .userInfo{
+    width: 70%;
+    line-height: 1.5;
+}
+header .organName, header .empInfo {
+    white-space:nowrap;
+	overflow:hidden;
+	text-overflow:ellipsis;
+}
+header .Lset .listico > span {
+	color:red;
+	font-size:small;
+	width: 16px;
+	height: 16px;
+	position: absolute;
+	top:-18px;
+	left:6px;
+}
+header .offline {
+	background: #eb5d5f;
+}
+header .online {
+	background: #21cc60;
+}
+header .Lset .pic{
+	position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 40px;
+    border: 2px solid #FFF;
+    background: #d6d8d1;
+    right: -22px;
+    top: 8px;
+    overflow: hidden;
+    box-shadow: 1px 0 0 #c3dde8;
+    display:flex;
+    align-items:center;
+}
+header .Lset .pic img{
+	max-width: 40px;
+	max-height: 40px;
+}
+
+.user-status {
+	display: inline-block;
+	width: 7px;
+	height: 7px;
+	border: 1px solid #FFF;
+	border-radius: 7px;
+	margin-right: 5px;
+}
+
+.Ritem {
+	position: relative;
+    display:flex;
+    align-items:center;
+    width:50%;	
+}
+
+.Ritem .cmdInfo {
+    display:flex;
+    flex-grow:1;
+    align-items:center;
+    justify-content:center
+}
+
+.Ritem a {
+	display: block;
+	margin: 0 1em;
+	width: 26px;
+	height: 21px;
+	background: url(../images/chact_ico.png);
+}
+.Ritem .txtico{
+	background-position: 0 -187px;
+}
+.Ritem .callico{
+	background-position: -29px 0;
+}
+.Ritem .videoico{
+	background-position: -58px 0;
+}
+.Ritem .closeico{
+	background-position: -87px 0;
+}
+
+.blink {
+    animation-duration: 1s;
+    animation-name: blink;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-timing-function: ease-in-out;
+}
+@keyframes blink {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}

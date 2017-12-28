@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, minimal-ui" />
+    <title></title>
+    <link href="css/header.css" rel="stylesheet" />
+    <script src='js/jquery-1.8.2.min.js'></script>
+    <script src='js/base.js'></script>
+    <script>
+        $(document).ready(function () {
+        });
+
+        function setUserInfo(organName, empName, imgUrl) {
+            $('.organName').html(organName);
+            $('.empName').html(empName);
+            $('.userInfo .pic img').attr('src', imgUrl)
+            $('.userInfo').show();
+        }
+
+        function setUserOnline(val) {
+            if (val == '1')
+                $('.user-status').addClass('online');
+            else
+                $('.user-status').removeClass('online');
+        }
+
+        function setNewMessage(val) {
+            if (val == '1')
+                $('.newMessage').show();
+            else
+                $('.newMessage').hide();
+        }
+    </script>
+</head>
+<body>
+    <div id="maincon">
+        <header>
+            <div class="Lset">
+                <div style="width:40px;"><a href="javascript:void(0)" class="listico" onclick="invokeSrApi('invoke://showMenu')"></a></div>
+                <div class="userInfo" style="display:none">
+                    <div class="organName"></div>
+                    <div class="empInfo">
+                        <span class="user-status offline"></span>
+                        <span class="empName"></span>  
+                    </div>
+                    <div class="pic"><img src=""></div>
+                </div>
+                <div class="newMessage blink" style="display:none">New</div>
+            </div>
+            <div class="Ritem">
+                <div style="width:20px">　</div>
+                <div class="cmdInfo">
+                    <!--<a href="javascript:void(0)" data-cmd="btnCallMessage" class="txtico" onclick="invokeSrApi('invoke://showMessages')" style="visibility:hidden"></a>-->
+                    <a href="javascript:void(0)" data-cmd="btnCallVoice" class="callico" onclick="invokeSrApi('invoke://showCallVoice')" style=""></a>
+                    <a href="javascript:void(0)" data-cmd="btnCallVideo" class="videoico" onclick="invokeSrApi('invoke://showCallVideo')" style=""></a>
+                </div>
+            </div>
+        </header>
+    </div>
+</body>
+</html>

@@ -1,0 +1,163 @@
+﻿*{ margin: 0; padding: 0;}
+a, img{ border: none; display: block;}
+a{ text-decoration: none; color: #1b81cf; outline: none;}
+body{ font: 15px/1.62 "ITC Avant Garde Gothic","微軟正黑體", Verdana, Arial, Helvetica, sans-serif;}
+
+ol, ul {
+    list-style: none;
+}
+
+.chactbox{
+	position: relative;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 25px;
+}
+.chactbox li{
+	margin: 16px 0;
+}
+.chactbox .dateline{
+	position: relative;
+}
+.chactbox .dateline p{
+	display: block;
+	text-align: center;
+    background: #f4f4f4;
+    color: #808080;
+    line-height: 30px;
+    max-width: 70%;
+    margin: 0 auto;
+    border-radius: 30px;
+    position: relative;
+    z-index: 5;
+}
+.chactbox .dateline .line{
+    display: block;
+    position: absolute;
+    width: 100%;
+    border-top: 1px solid #e8e8e8;
+    top: 14px;
+    z-index: 2;
+}
+.chactbox .tleft{
+	text-align: left;
+}
+.chactbox .tleft p{
+    display: inline-block;
+	text-align: left;
+	border-radius: 30px 30px 30px 0;
+	background: #419ede;
+	color: #FFF;
+	/*
+	line-height: 36px;
+	padding: 0 15px;
+	*/
+	padding:1em;
+	box-sizing: border-box;
+}
+.chactbox .tleft .time{
+	display: inline-block;
+	font-size: 11px;
+    color: #73c5fd;
+    text-shadow: 0 0 0 #4ea7e4;
+    padding: 0 7px;
+    vertical-align: bottom;
+}
+.chactbox .tright{
+	text-align: right;
+}
+.chactbox .tright p{
+    display: inline-block;
+	text-align: left;
+	border-radius: 30px 30px 0 30px;
+	background: #eeeeee;
+	color: #2c2c2c;
+	text-shadow: 0 0 0 #2c2c2c;
+	/*
+	line-height: 36px;
+	padding: 0 15px;
+	*/
+	padding:1em;
+	box-sizing: border-box;
+}
+.chactbox .tleft .video_del{
+	display: block;
+	width: 32px;
+	height: 25px; 
+	background: url(../images/chact_ico.png) -58px -110px;
+	margin: 5px auto 0;
+}
+.chactbox .tright .video_del{
+	display: block;
+	width: 32px;
+	height: 25px; 
+	background: url(../images/chact_ico.png) -58px -82px;
+	margin: 5px auto 0;
+}
+.chactbox .tleft .tel_del{
+	display: block;
+	width: 26px;
+	height: 21px; 
+	background: url(../images/chact_ico.png) -29px -27px;
+	margin: 5px auto 0;
+}
+.chactbox .tright .tel_del{
+	display: block;
+	width: 26px;
+	height: 21px; 
+	background: url(../images/chact_ico.png) -29px -54px;
+	margin: 7px auto 0;
+}
+.chactbox .tright .time{
+	display: inline-block;
+	font-size: 11px;
+    color: #dddddd;
+    text-shadow: 0 0 0 #4ea7e4;
+    padding: 0 7px;
+    vertical-align: bottom;
+}
+.chactbox .sendfiles .files{
+    width: 130px;
+    padding-top: 20px;
+    margin: 15px auto 0;
+    height: 60px;
+    background: #FFF;
+    display: block;
+}
+
+footer {
+    width:100%;
+    display:flex;
+    height:60px;
+    align-items:stretch;
+    z-index:10;
+    border-top:1px solid #dddddd;
+}
+
+.fixed-top {
+    position:fixed;
+    top:0 !important; 
+}
+
+.fixed-bottom {
+    position:fixed;
+    bottom:0;
+}
+
+footer > * {
+    display:block;
+}
+
+footer > textarea {
+    flex-grow:1;
+    font-size:14px;
+    border:0;
+    margin:.5em 0 .5em 1em
+}
+
+footer > div {
+    padding:1em;
+    display:flex;
+    align-items:center;
+}
+

@@ -1,0 +1,29 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, minimal-ui" />
+    <title></title>
+    <link href="css/menu.css" rel="stylesheet" />
+    <script src='js/jquery-1.8.2.min.js'></script>
+    <script src='js/Query.js'></script>
+    <script>
+        function invokeSrApi(URL) {
+            location.href = URL;
+        }
+    </script>
+</head>
+<body>
+<div id="ToolChact">
+    <!--maincon-->
+    <section id="maincon">
+        <!--sidebar-->
+        <aside id="sidebar">
+            <div class="sidetitle">
+                <a href="javascript:void(0)" data-cmd="btnMenuHide" class="showico" onclick="invokeSrApi('invoke://showMessages')"></a>
+            </div>
+        </aside>
+    </section>
+</div>
+</body>
+</html>
