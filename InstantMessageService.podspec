@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
 s.name             = 'InstantMessageService'
-s.version          = '0.2.1'
+s.version          = '0.2.2'
 s.summary          = 'A Simple WebRtc Application For Ios "1111 Find Jobs".'
 
 # This description is used to generate tags and improve search results.
@@ -38,7 +38,6 @@ s.source_files = 'InstantMessageService/Classes/**/*'
 
 # s.public_header_files = 'Pod/Classes/**/*.h'
 # s.frameworks = 'UIKit', 'MapKit'
-# s.dependency 'AFNetworking', '~> 2.3'
 s.dependency 'SignalR-ObjC', '~> 2.0'
 s.dependency 'GoogleWebRTC', '~> 1.1'
 #s.ios.vendored_frameworks = 'sdk/*.framework'
