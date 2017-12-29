@@ -16,6 +16,7 @@ public class RoomInfo : NSObject {
     private var _oNo:String = ""
     private var _oName:String = ""
     private var _uNo:String = ""
+    private var _uName:String = ""
     private var _eNo:String = ""
     private var _eName:String = ""
     private var _msg:String = ""
@@ -40,6 +41,8 @@ public class RoomInfo : NSObject {
     public var oName:String { get { return _oName } }
     ///廠商使用者編號
     public var uNo:String { get { return _uNo } }
+    ///廠商使用者名稱
+    public var uName:String { get { return _uName } }
     ///職缺編號
     public var eNo:String { get { return _eNo } }
     ///職缺名稱
@@ -78,7 +81,11 @@ public class RoomInfo : NSObject {
         _delegates.removeValue(forKey: key)
     }
     
-    public func setInfo(userType:Any? = nil, cid:Any? = nil, tNo:Any? = nil, tName:Any? = nil, oNo:Any? = nil, oName:Any? = nil, uNo:Any? = nil, eNo:Any? = nil, eName:Any? = nil
+    public func setInfo(userType:Any? = nil, cid:Any? = nil
+        , tNo:Any? = nil, tName:Any? = nil
+        , oNo:Any? = nil, oName:Any? = nil
+        , uNo:Any? = nil, uName:Any? = nil
+        , eNo:Any? = nil, eName:Any? = nil
         , msg:Any? = nil, msgType:Any? = nil, isDial:Any? = nil, phoneStartTime:Any? = nil, phoneStopTime:Any? = nil, phonePickupTime:Any? = nil, phoneHungUpTime:Any? = nil)
     {
         utility.synchronized(lock: self) {
@@ -116,6 +123,11 @@ public class RoomInfo : NSObject {
             if(uNo != nil) {
                 _uNo = (uNo as AnyObject).description
                 _fields.append("uNo")
+            }
+            
+            if(uName != nil) {
+                _uName = (uName as AnyObject).description
+                _fields.append("uName")
             }
             
             if(eNo != nil) {

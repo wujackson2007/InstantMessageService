@@ -81,6 +81,12 @@ public class IMService : NSObject {
         guard _isServiceStart else { return }
         _signHandler!.stop()
         _isServiceStart = false
+        
+        //清除RTC連線
+        for(_, val) in _rtcHandlers {
+            val.dispose()
+        }
+        _rtcHandlers.removeAll()
     }
     
     public func notifyUser() -> Void {
@@ -174,13 +180,19 @@ public class IMService : NSObject {
                 
             case "onImPhoneAction":
                 if(owner.onImPhoneAction != nil) {
-                    owner.onImPhoneAction!(sender: self, isVideo:args[0] as! Bool, args:args[1] as! Array<String>)
+                    owner.onImPhoneAction!(sender: self, isVideo:args[0] as! Bool, args:args[1] as! Array<AnyObject>)
                 }
                 break
                 
             case "onImPhoneShow":
                 if(owner.onImPhoneShow != nil) {
                     owner.onImPhoneShow!(sender: self, isDial: args[0] as! Bool, isVideo: args[1] as! Bool)
+                }
+                break
+    
+            case "onImUserStatus":
+                if(owner.onImUserStatus != nil) {
+                    owner.onImUserStatus!(sender: self, args: args[0] as! Dictionary<String, AnyObject>)
                 }
                 break
                 
@@ -207,12 +219,36 @@ public class IMService : NSObject {
         }
     }
     
+    func setLocalStream(isVideo:Bool, isDial:Bool) -> Void {
+        self.rtcMedia.videoTrack.isEnabled = isVideo
+        self._localProxy.set(track:self.rtcMedia.videoTrack)
+        self.rtcMedia.startCapture(videoWidth: 320, videoHeight: 240)
+        
+        for(_, _handler) in _rtcHandlers {
+            _handler.add(videoTrack: self.rtcMedia.videoTrack, audioTrack: self.rtcMedia.audioTrack)
+            if(!isDial) {
+                _handler.createOffer()
+            }
+        }
+    }
+    
+    func phoneViewOpen(isDial:Bool, isVideo:Bool) {
+        roomData.setInfo(msgType: isVideo ? "2" : "1"
+            , isDial: isDial
+            , phoneStartTime: Date.init().timestamp
+            , phoneStopTime: 0
+            , phonePickupTime: 0
+            , phoneHungUpTime: 0)
+        
+        invokeDelegate(name: "onImPhoneShow", args: [isDial, isVideo])
+    }
+    
     /**
      電話處理.
      
      - Parameter isVideo: 是否為影像電話.
      - Parameter action:
-        dial = 撥出, show = 來電, pickup = 接聽, hangup = 掛斷, changevideo = 切換為視訊).
+     dial = 撥出, show = 來電, pickup = 接聽, hangup = 掛斷, changevideo = 切換為視訊).
      */
     public func doCallPhone(isVideo:Bool, action:String) -> Void {
         let isDial = action == "dial" ? true : false
@@ -259,28 +295,14 @@ public class IMService : NSObject {
         _remoteProxy.set(target:remote)
     }
     
-    func setLocalStream(isVideo:Bool, isDial:Bool) -> Void {
-        self.rtcMedia.videoTrack.isEnabled = isVideo
-        self._localProxy.set(track:self.rtcMedia.videoTrack)
-        self.rtcMedia.startCapture(videoWidth: 320, videoHeight: 240)
-        
-        for(_, _handler) in _rtcHandlers {
-            _handler.add(videoTrack: self.rtcMedia.videoTrack, audioTrack: self.rtcMedia.audioTrack)
-            if(!isDial) {
-                _handler.createOffer()
-            }
-        }
+    public func getUserStatus() -> Void {
+        signInvoke(method: "getUserStatus", withArgs: [
+            _roomInfo.userType == "1" ? 2 : 1
+            , _roomInfo.oNo, _roomInfo.uNo, _roomInfo.tNo, 0])
     }
     
-    func phoneViewOpen(isDial:Bool, isVideo:Bool) {
-        roomData.setInfo(msgType: isVideo ? "2" : "1"
-            , isDial: isDial
-            , phoneStartTime: Date.init().timestamp
-            , phoneStopTime: 0
-            , phonePickupTime: 0
-            , phoneHungUpTime: 0)
-        
-        invokeDelegate(name: "onImPhoneShow", args: [isDial, isVideo])
+    public func savePushToken(tokenId:String, deviceId:String) -> Void {
+        signInvoke(method: "savePushToken", withArgs: [tokenId, deviceId, 8])
     }
 }
 /** ==============================================================================================
@@ -294,7 +316,10 @@ public class IMService : NSObject {
     @objc optional func onImPhoneShow(sender:IMService, isDial:Bool, isVideo:Bool)
     
     /// 收到電話訊號觸發
-    @objc optional func onImPhoneAction(sender:IMService, isVideo:Bool, args:Array<String>)
+    @objc optional func onImPhoneAction(sender:IMService, isVideo:Bool, args:Array<AnyObject>)
+    
+    /// 收到使用者狀態
+    @objc optional func onImUserStatus(sender:IMService, args:Dictionary<String, AnyObject>)
 }
 
 /** ==============================================================================================
@@ -305,9 +330,14 @@ extension IMService : SignHandlerDelegate {
     func onSignConnected(sender:SignHandler) {
         _isSignConnected = true
         
-        // 回傳使用者名稱
-        let _userName = _roomInfo.userType == "1" ? _roomInfo.tName : _roomInfo.oName
-        sender.invoke("settUser", withArgs: [_userName])
+        if(_roomInfo.userType == "1") {
+            //求職
+            sender.invoke("settUser", withArgs: [_roomInfo.tName])
+        }
+        else {
+            //求才
+            sender.invoke("setoUser", withArgs: [_roomInfo.oName, _roomInfo.uName])
+        }
         
         //
         let _size = self._promiseSignConnected.count-1
@@ -324,33 +354,54 @@ extension IMService : SignHandlerDelegate {
     }
     
     ///收到消息觸發
-    func onSignReceived(sender:SignHandler, eventName:String, args:Array<String>) {
+    func onSignReceived(sender:SignHandler, eventName:String, args:Array<AnyObject>) {
         switch eventName {
         case "onTextMessage":
-            guard ("\(_roomInfo.tNo)_\(_roomInfo.oNo)_\(_roomInfo.uNo)_\(_roomInfo.eNo)" == "\(args[1])_\(args[2])_\(args[3])_\(args[4])") else { return }
-            invokeDelegate(name: "onImMessage", args: ["0", self.getUserMsgLog(msgType: "0", msg: args[5])])
+            guard ("\(_roomInfo.tNo)_\(_roomInfo.oNo)_\(_roomInfo.uNo)_\(_roomInfo.eNo)" ==
+                "\(args[1].description!)_\(args[2].description!)_\(args[3].description!)_\(args[4].description!)") else { return }
+            
+            if(args[5].description != "") {
+                invokeDelegate(name: "onImMessage", args: ["0", self.getUserMsgLog(msgType: "0", msg: args[5].description)])
+            }
+            break
+            
+        case "onOffLineMessage":
+            guard ("\(_roomInfo.tNo)_\(_roomInfo.oNo)_\(_roomInfo.uNo)_\(_roomInfo.eNo)" !=
+                "\(args[1].description!)_\(args[2].description!)_\(args[3].description!)_\(args[4].description!)") else { return }
+            
+            invokeDelegate(name: "onImMessage", args: ["0", "onOffLineMessage"])
+            break
+            
+        case "onUserStatus":
+            //{"Status":1,"Text":"上線中","tNo":47012821,"oNo":9565124,"uNo":20132852,"ContextID":"","OnlineTime":0,"OnlineTimeNote":"剛剛上線"}
+            if let _args0 = args[0] as? Dictionary<String, AnyObject> {
+                guard ("\(_roomInfo.tNo)_\(_roomInfo.oNo)_\(_roomInfo.uNo)" ==
+                    "\(_args0["tNo"]!.description!)_\(_args0["oNo"]!.description!)_\(_args0["uNo"]!.description!)") else { return }
+                
+                invokeDelegate(name: "onImUserStatus", args: [_args0])
+            }
             break
             
         case "onNotifyUser":
-            //function(id, tNo, oNo, uNo, eNo, empName)
-            if(_roomInfo.tNo == args[1] && _roomInfo.eNo == args[4] && _roomInfo.uNo == args[3]) {
-                _roomInfo.setInfo(cid:args[0])
-                sender.invoke("doRTCConnection", withArgs:[args[0]])
-            }
+            guard ( "\(_roomInfo.uNo)_\(_roomInfo.eNo)" ==
+                    "\(args[3].description!)_\(args[4].description!)") else { return }
+            
+            _roomInfo.setInfo(cid:args[0].description)
+            sender.invoke("doRTCConnection", withArgs:[args[0].description])
             break
             
         case "onRTCConnecting":
             //等RTC連線後傳送 doRTCConnected 訊號
             getRtcHandler(id:args[0], fn: { (_rtcHandler) in
                 _rtcHandler.createOffer(onConnected: { (_rtcHandler) in
-                    sender.invoke("doRTCConnected", withArgs:[args[1]]);
+                    sender.invoke("doRTCConnected", withArgs:[args[1].description]);
                 })
             })
             break
             
         case "onRTCMessage": //收到 RTC 協議訊息
-            getRtcHandler(id:args[0], fn: { (_rtcHandler) in
-                if let _dic = args[1].parseJson() {
+            getRtcHandler(id:args[0].description!, fn: { (_rtcHandler) in
+                if let _dic = args[1].description!.parseJson() {
                     if let _candidate = _dic["candidate"] as? Dictionary<String, AnyObject> {
                         _rtcHandler.add(candidate: _candidate)
                     }
@@ -362,7 +413,7 @@ extension IMService : SignHandlerDelegate {
             break
             
         case "onTalkLeave":
-            if let _handler = _rtcHandlers.removeValue(forKey: args[0]) {
+            if let _handler = _rtcHandlers.removeValue(forKey: args[0].description) {
                 _handler.dispose()
             }
             break
@@ -373,12 +424,12 @@ extension IMService : SignHandlerDelegate {
             let _phoneTime = Date.init().timestamp
             var _duringTime = 0
             
-            switch(args[0]) {
+            switch(args[0].description) {
             case "dial":
                 break
                 
             case "show":
-                self.doCallPhone(isVideo: _isVideo, action: args[0])
+                self.doCallPhone(isVideo: _isVideo, action: args[0].description)
                 break
                 
             case "pickup":

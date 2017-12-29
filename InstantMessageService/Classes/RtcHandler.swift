@@ -55,6 +55,7 @@ class RtcHandler : NSObject {
     }
     
     func dispose() -> Void {
+        clearStream()
         connection.close()
     }
     

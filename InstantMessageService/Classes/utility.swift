@@ -5,9 +5,6 @@
 //  Created by wujackson on 2017/10/17.
 //  Copyright © 2017年 wujackson. All rights reserved.
 //
-
-import Foundation
-
 class utility {
     static func getValue<T>(val:Any) -> T? {
         var o_val:T?
@@ -130,9 +127,18 @@ extension Data {
     func parseJson() -> Dictionary<String, Any>?
     {
         var o_val:Dictionary<String, Any>?
+        var rawData:Any?
+        
         do {
-            o_val = try JSONSerialization.jsonObject(with: self, options: JSONSerialization.ReadingOptions.mutableLeaves) as? [String:Any]
-        } catch {}
+            rawData = try JSONSerialization.jsonObject(with: self, options: .mutableLeaves)
+        } catch {
+            print("\(error.localizedDescription)")
+        }
+    
+        if(rawData != nil) {
+            o_val = rawData! as? [String:Any]
+        }
+        
         return o_val
     }
     

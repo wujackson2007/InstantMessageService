@@ -133,22 +133,6 @@ extension MainController: WKNavigationDelegate {
                         break
                         
                     case "invoke://sendTextMessage": //傳送文字訊息
-                        /*
-                        let dateFormatter = DateFormatter()
-                        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                        if let jsonData = utility.convertToJson(of: ["msgType":0
-                            , "whoTalk":1
-                            , "msgLog":args
-                            , "dateIn":dateFormatter.string(from: Date.init())
-                            , "duringTime":0])
-                        {
-                            //
-                            self.chatMessageLoad(jsonData:"[\(jsonData)]")
-                            
-                            //
-                            
-                        }
- */
                         ServiceHandler.sendMessage(type: "0", message: args)
                         break
                         
@@ -178,6 +162,7 @@ extension MainController: RoomInfoDelegate {
             self.header.evaluateJavaScript("setUserInfo('\(sender.oName)','\(sender.eName)','\(imgUrl)')")
             
             //取得使用者狀態
+            ServiceHandler.getUserStatus()
             
             //讀取訊息
             self.chatMessageLoad(jsonData: _data.toString(), clear: true)
@@ -187,6 +172,17 @@ extension MainController: RoomInfoDelegate {
 
 extension MainController: IMServiceDelegate {
     @objc func onImMessage(sender:IMService, type:String, message:String) {
-        self.chatMessageLoad(jsonData:"[\(message)]")
+        if(message == "onOffLineMessage") {
+            self.header.evaluateJavaScript("setNewMessage('1')")
+        }
+        else {
+            self.chatMessageLoad(jsonData:"[\(message)]")
+        }
+    }
+    
+    /// 收到使用者狀態
+    @objc func onImUserStatus(sender:IMService, args:Dictionary<String, AnyObject>) {
+        let statuNote = args["OnlineTimeNote"]!.description!
+        self.header.evaluateJavaScript("setStatusNote('\(statuNote)')")
     }
 }

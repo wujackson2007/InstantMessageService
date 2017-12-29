@@ -52,15 +52,15 @@ class SignHandler : NSObject {
                     guard let _delegate = self._delegate else { return }
                     if let _data = message as? Dictionary<String, AnyObject> {
                         if let _method = _data["M"] as? String {
-                            var _args:Array<String> = []
+                            //var _args:Array<String> = []
                             var _argRaw:Array<AnyObject> = []
                             if let _arr:Array<AnyObject> = _data["A"] as? Array<AnyObject> {
                                 for val in _arr {
+                                    //_args.append(val.description)
                                     _argRaw.append(val)
-                                    _args.append(val.description)
                                 }
                             }
-                            _delegate.onSignReceived(sender: self, eventName: _method, args: _args)
+                            _delegate.onSignReceived(sender: self, eventName: _method, args: _argRaw)
                         }
                     }
                 }
@@ -94,5 +94,5 @@ protocol SignHandlerDelegate : NSObjectProtocol {
     ///訊號離線觸發
     func onSignDisconnected(sender:SignHandler)
     ///收到消息觸發
-    func onSignReceived(sender:SignHandler, eventName:String, args:Array<String>)
+    func onSignReceived(sender:SignHandler, eventName:String, args:Array<AnyObject>)
 }

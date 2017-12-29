@@ -41,7 +41,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-        ServiceHandler.serviceStart()
+        ServiceHandler.serviceStart {
+            ServiceHandler.savePushToken(tokenId: "b1b7a31da53873c3ef47f1ef9c629fab350d22024e711fcde1a5b9055140ff83", deviceId: "3DE8B84B-AE76-4EC0-8AFC-5C0AB89199FE")
+        }
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
@@ -59,11 +61,11 @@ extension AppDelegate : IMServiceDelegate {
         }
     }
     
-    @objc func onImPhoneAction(sender:IMService, isVideo:Bool, args:Array<String>) {
+    @objc func onImPhoneAction(sender:IMService, isVideo:Bool, args:Array<AnyObject>) {
         DispatchQueue.main.async() {
-            switch(args[0]) {
+            switch(args[0].description!) {
             case "changevideo":
-                if(args[1] == "0") {
+                if(args[1].description! == "0") {
                     utility.showAlert(message: "對方要求開啟視訊，是否開啟？", resolve: { (_) in
                         ServiceHandler.video(enabled: true)
                     })

@@ -13,10 +13,14 @@
         });
 
         function setUserInfo(organName, empName, imgUrl) {
-            $('.organName').html(organName);
+            //$('.organName').html(organName);
             $('.empName').html(empName);
             $('.userInfo .pic img').attr('src', imgUrl)
             $('.userInfo').show();
+        }
+    
+        function setStatusNote(val) {
+            $('.statusNote').html(val);
         }
 
         function setUserOnline(val) {
@@ -40,11 +44,8 @@
             <div class="Lset">
                 <div style="width:40px;"><a href="javascript:void(0)" class="listico" onclick="invokeSrApi('invoke://showMenu')"></a></div>
                 <div class="userInfo" style="display:none">
-                    <div class="organName"></div>
-                    <div class="empInfo">
-                        <span class="user-status offline"></span>
-                        <span class="empName"></span>  
-                    </div>
+                    <div class="empName"></div>
+                    <div class="statusNote"></div>
                     <div class="pic"><img src=""></div>
                 </div>
                 <div class="newMessage blink" style="display:none">New</div>
@@ -52,7 +53,6 @@
             <div class="Ritem">
                 <div style="width:20px">　</div>
                 <div class="cmdInfo">
-                    <!--<a href="javascript:void(0)" data-cmd="btnCallMessage" class="txtico" onclick="invokeSrApi('invoke://showMessages')" style="visibility:hidden"></a>-->
                     <a href="javascript:void(0)" data-cmd="btnCallVoice" class="callico" onclick="invokeSrApi('invoke://showCallVoice')" style=""></a>
                     <a href="javascript:void(0)" data-cmd="btnCallVideo" class="videoico" onclick="invokeSrApi('invoke://showCallVideo')" style=""></a>
                 </div>

@@ -20,20 +20,12 @@ class ServiceHandler {
         }
     }
     
-    private static var imService:IMService {
-        get {
-            if(_imService == nil) {
-                _imService = IMService.init()
-            }
-            
-            return _imService!
-        }
-    }
-    
-    static var roomData:RoomInfo {
-        get {
-            return imService.roomData
-        }
+    static func loadHtmlPage(bundle:Bundle, target:WKWebView, page:String) {
+        let arr = page.components(separatedBy: ".")
+        let htmlPath:String = bundle.path(forResource: "html", ofType: "bundle")!
+        let htmlBundle:Bundle? = Bundle(path: htmlPath)
+        let url:URL = URL(fileURLWithPath: htmlBundle!.path(forResource: arr[0], ofType: arr[1])!)
+        target.load(URLRequest(url: url))
     }
     
     static var resource:Dictionary<String, UIImage> {
@@ -54,8 +46,24 @@ class ServiceHandler {
         }
     }
     
+    private static var imService:IMService {
+        get {
+            if(_imService == nil) {
+                _imService = IMService.init()
+            }
+            
+            return _imService!
+        }
+    }
+    
+    static var roomData:RoomInfo {
+        get {
+            return imService.roomData
+        }
+    }
+    
     /// 服務啟動
-    static func serviceStart() {
+    static func serviceStart(fn:(() -> Void)? = nil) {
         if let loginInfo = LoginController.getLoginInfo() {
             let tNo:String = loginInfo["tNo"] ?? ""
             let tName:String = loginInfo["tName"] ?? ""
@@ -64,7 +72,8 @@ class ServiceHandler {
             if(roomData.tName == "") {
                 roomData.setInfo(userType: "1", tNo: tNo, tName: tName)
             }
-            imService.start(hubName: "echathub", url: "\(apiHost)/eChatHub", queryString: ["tNo": tNo, "Token": toKen, "Chat": "1"])
+            
+            imService.start(hubName: "echathub", url: "\(apiHost)/eChatHub", queryString: ["tNo": tNo, "Token": toKen, "Chat": "1"], onStart: fn)
         }
     }
     
@@ -106,11 +115,13 @@ class ServiceHandler {
         imService.setProxyRenderer(local: local, remote: remote)
     }
     
-    static func loadHtmlPage(bundle:Bundle, target:WKWebView, page:String) {
-        let arr = page.components(separatedBy: ".")
-        let htmlPath:String = bundle.path(forResource: "html", ofType: "bundle")!
-        let htmlBundle:Bundle? = Bundle(path: htmlPath)
-        let url:URL = URL(fileURLWithPath: htmlBundle!.path(forResource: arr[0], ofType: arr[1])!)
-        target.load(URLRequest(url: url))
+    /// 取得使用者狀態
+    static func getUserStatus() -> Void {
+        imService.getUserStatus()
+    }
+    
+    ///
+    static func savePushToken(tokenId:String, deviceId:String) -> Void {
+        imService.savePushToken(tokenId: tokenId, deviceId: deviceId)
     }
 }

@@ -31,7 +31,8 @@ class MenuController: UIViewController {
         
         ServiceHandler.loadHtmlPage(bundle: Bundle.main, target: header, page:"menuHeader.html")
         ServiceHandler.loadHtmlPage(bundle: Bundle.main, target: body, page:"menu.html")
-        //params.header.evaluateJavaScript("setNewMessage('0')")
+        
+        AppDelegate.mainController?.header.evaluateJavaScript("setNewMessage('0')")
     }
     
     override func didReceiveMemoryWarning() {
