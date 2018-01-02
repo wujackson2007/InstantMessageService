@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
 s.name             = 'InstantMessageService'
-s.version          = '0.2.2'
+s.version          = '0.2.3'
 s.summary          = 'A Simple WebRtc Application For Ios "1111 Find Jobs".'
 
 # This description is used to generate tags and improve search results.

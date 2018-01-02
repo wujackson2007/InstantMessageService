@@ -79,7 +79,11 @@ class ServiceHandler {
     
     /// 服務關閉
     static func serviceStop() {
-        imService.stop()
+        if(ServiceHandler.roomData.phonePickupTime > 0 && ServiceHandler.roomData.phoneHungUpTime == 0) {
+            //通話中不關閉
+        } else {
+            imService.stop()
+        }
     }
     
     /// 開啟或關閉音訊
@@ -123,5 +127,26 @@ class ServiceHandler {
     ///
     static func savePushToken(tokenId:String, deviceId:String) -> Void {
         imService.savePushToken(tokenId: tokenId, deviceId: deviceId)
+    }
+    
+    /// 服務是否啟動
+    static var isServiceStart:Bool { get { return imService.isServiceStart } }
+    
+    /// 訊號是否連線
+    static var isSignConnected:Bool { get { return imService.isSignConnected } }
+    
+    ///
+    static func createNotification(title:String, body:String, userInfo:Any? = nil) {
+        if(title != "" && body != "") {
+            let notification = UILocalNotification.init()
+            notification.alertTitle = title
+            notification.alertBody = body
+            
+            if(userInfo != nil) {
+                notification.userInfo = ["aps":userInfo]
+            }
+            
+            UIApplication.shared.presentLocalNotificationNow(notification)
+        }
     }
 }

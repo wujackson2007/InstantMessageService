@@ -25,6 +25,12 @@ public class IMService : NSObject {
     var _isSignConnected:Bool = false
     var _isIceConnected:Bool = false
     
+    /// 服務是否啟動
+    public var isServiceStart:Bool { get { return _isServiceStart } }
+    
+    /// 訊號是否已連線
+    public var isSignConnected:Bool { get { return _isSignConnected } }
+    
     /// 回傳聊天室資料
     public var roomData:RoomInfo {
         get {
@@ -274,7 +280,14 @@ public class IMService : NSObject {
             break
             
         case "show":
-            self.phoneViewOpen(isDial: isDial, isVideo: isVideo)
+            if(_isIceConnected) {
+                self.phoneViewOpen(isDial: isDial, isVideo: isVideo)
+            } else {
+                _promiseRtcConnected.append({
+                    self.phoneViewOpen(isDial: isDial, isVideo: isVideo)
+                })
+                notifyUser()
+            }
             break
             
         case "pickup":

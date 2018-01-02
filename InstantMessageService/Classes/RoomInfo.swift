@@ -26,6 +26,7 @@ public class RoomInfo : NSObject {
     private var _phonePickupTime:Int = 0
     private var _phoneHungUpTime:Int = 0
     private var _isDial:Bool = false
+    private var _pushToken:String = ""
     
     ///使用者類型: 1_求職者, 2_公司廠商
     public var userType:String { get { return _userType } }
@@ -52,6 +53,9 @@ public class RoomInfo : NSObject {
     public var roomId:String { get { return "\(_oNo)_\(_tNo)_\(_uNo)" } }
     
     // 使用於訊息
+    /// 推播 Token
+    public var pushToken:String { get { return _pushToken } }
+    /// 訊息內容
     public var msg:String { get { return _msg } }
     /// 訊息類型 0_文字, 1_聲音, 2_影像
     public var msgType:String { get { return _msgType } }
@@ -86,7 +90,9 @@ public class RoomInfo : NSObject {
         , oNo:Any? = nil, oName:Any? = nil
         , uNo:Any? = nil, uName:Any? = nil
         , eNo:Any? = nil, eName:Any? = nil
-        , msg:Any? = nil, msgType:Any? = nil, isDial:Any? = nil, phoneStartTime:Any? = nil, phoneStopTime:Any? = nil, phonePickupTime:Any? = nil, phoneHungUpTime:Any? = nil)
+        , msg:Any? = nil, msgType:Any? = nil, isDial:Any? = nil, phoneStartTime:Any? = nil, phoneStopTime:Any? = nil, phonePickupTime:Any? = nil, phoneHungUpTime:Any? = nil
+        , pushToken:Any? = nil
+        )
     {
         utility.synchronized(lock: self) {
             var _fields:Array<String> = []
@@ -173,6 +179,11 @@ public class RoomInfo : NSObject {
             if(isDial != nil) {
                 _isDial = isDial as! Bool
                 _fields.append("isDial")
+            }
+            
+            if(pushToken != nil) {
+                _pushToken = pushToken as! String
+                _fields.append("pushToken")
             }
             
             if(_fields.count > 0) {
