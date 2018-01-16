@@ -101,7 +101,10 @@ public class IMService : NSObject {
             , roomData.oNo
             , roomData.eNo
             , roomData.uNo
-            , roomData.eName])
+            , roomData.eName
+            , roomData.msgType
+            , roomData.userType == "1" ? roomData.tImgUrl : roomData.oImgUrl
+            ])
     }
     
     /// 傳送訊息
@@ -170,9 +173,19 @@ public class IMService : NSObject {
         return o_val
     }
     
-    ///
+    ///呼叫HUB方法
     public func signInvoke(method: String!, withArgs args: [Any]!) -> Void {
         _signHandler!.invoke(method, withArgs: args)
+    }
+    
+    ///離開會議室
+    public func leaveRoom() -> Void {
+        signInvoke(method: "leaveRoom", withArgs: [roomData.roomId, _signHandler!.connectionId])
+    }
+    
+    ///推送訊息已讀
+    public func updateMsgReaded() -> Void {
+        signInvoke(method: "updateMsgReaded", withArgs: [roomData.tNo, roomData.oNo, roomData.uNo, roomData.eNo])
     }
     
     func invokeDelegate(name:String, args:Array<Any>) -> Void {

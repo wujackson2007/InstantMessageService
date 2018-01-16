@@ -125,6 +125,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 ServiceHandler.roomData.setInfo(userType: _aps["uType"]?.description ?? ""
                     , cid: _aps["cId"]?.description ?? ""
                     , oNo: _aps["oNo"]?.description ?? ""
+                    , oImgUrl: _aps["imgURL"]?.description ?? ""
                     , uNo: _aps["uNo"]?.description ?? ""
                     , eNo: _aps["eNo"]?.description ?? ""
                     , eName: empName

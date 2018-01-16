@@ -90,7 +90,7 @@ extension MenuController: WKNavigationDelegate {
                     //{\"aNo\":5952,\"empName\":\"0719 測試職缺 請勿應徵\",\"talentNo\":47012821,\"organNo\":9565124,\"eNo\":80057674,\"uNo\":42084,\"dateIn\":\"2017-10-13 09:19:50\",\"noReadCN\":0,\"organ\":\"1111測試專用公司(請勿應徵)\"}
                     if var dic = args.parseJson() {
                         ServiceHandler.roomData.setInfo(userType: "1"
-                            , tNo: dic["talentNo"], tName: LoginController.tName
+                            , tNo: dic["talentNo"], tName: LoginController.tName, tImgUrl:LoginController.tImgUrl
                             , oNo: dic["organNo"], oName: dic["organ"]
                             , uNo: dic["uNo"]
                             , eNo: dic["eNo"], eName: dic["empName"])

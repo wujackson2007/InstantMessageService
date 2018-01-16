@@ -154,8 +154,10 @@ extension MainController: RoomInfoDelegate {
         guard (fields.contains("eNo") || fields.contains("uNo")) else { return }
         if let _data = utility.getUrlData(url: "\(ServiceHandler.apiHost)/Chact_Jobs/appApi.asp?cid=&eNo=\(sender.eNo)&uNo=\(sender.uNo)&actFun=getList&\(LoginController.apiToken)") {
             var imgUrl = ""
-            if let _imgData = utility.getUrlData(url: "https://images.1111.com.tw/oad/\(sender.oNo).jpg") {
-                imgUrl = "data:image/jpg;base64," + _imgData.base64EncodedString()
+            if(sender.oImgUrl != "") {
+                if let _imgData = utility.getUrlData(url: sender.oImgUrl) {
+                    imgUrl = "data:image/jpg;base64," + _imgData.base64EncodedString()
+                }
             }
             
             //設定抬頭資訊

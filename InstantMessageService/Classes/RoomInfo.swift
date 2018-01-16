@@ -13,8 +13,10 @@ public class RoomInfo : NSObject {
     private var _cid:String = ""
     private var _tNo:String = ""
     private var _tName:String = ""
+    private var _tImgUrl:String = ""
     private var _oNo:String = ""
     private var _oName:String = ""
+    private var _oImgUrl:String = ""
     private var _uNo:String = ""
     private var _uName:String = ""
     private var _eNo:String = ""
@@ -27,7 +29,7 @@ public class RoomInfo : NSObject {
     private var _phoneHungUpTime:Int = 0
     private var _isDial:Bool = false
     private var _pushToken:String = ""
-    
+
     ///使用者類型: 1_求職者, 2_公司廠商
     public var userType:String { get { return _userType } }
     ///
@@ -36,10 +38,14 @@ public class RoomInfo : NSObject {
     public var tNo:String { get { return _tNo } }
     ///求職者名稱
     public var tName:String { get { return _tName } }
+    ///求職者照片
+    public var tImgUrl:String { get { return _tImgUrl } }
     ///廠商編號
     public var oNo:String { get { return _oNo } }
     ///廠商名稱
     public var oName:String { get { return _oName } }
+    ///廠商照片
+    public var oImgUrl:String { get { return _oImgUrl } }
     ///廠商使用者編號
     public var uNo:String { get { return _uNo } }
     ///廠商使用者名稱
@@ -86,8 +92,8 @@ public class RoomInfo : NSObject {
     }
     
     public func setInfo(userType:Any? = nil, cid:Any? = nil
-        , tNo:Any? = nil, tName:Any? = nil
-        , oNo:Any? = nil, oName:Any? = nil
+        , tNo:Any? = nil, tName:Any? = nil, tImgUrl:Any? = nil
+        , oNo:Any? = nil, oName:Any? = nil, oImgUrl:Any? = nil
         , uNo:Any? = nil, uName:Any? = nil
         , eNo:Any? = nil, eName:Any? = nil
         , msg:Any? = nil, msgType:Any? = nil, isDial:Any? = nil, phoneStartTime:Any? = nil, phoneStopTime:Any? = nil, phonePickupTime:Any? = nil, phoneHungUpTime:Any? = nil
@@ -116,6 +122,11 @@ public class RoomInfo : NSObject {
                 _fields.append("tName")
             }
             
+            if(tImgUrl != nil) {
+                _tImgUrl = (tImgUrl as AnyObject).description
+                _fields.append("tImgUrl")
+            }
+            
             if(oNo != nil) {
                 _oNo = (oNo as AnyObject).description
                 _fields.append("oNo")
@@ -124,6 +135,11 @@ public class RoomInfo : NSObject {
             if(oName != nil) {
                 _oName = (oName as AnyObject).description
                 _fields.append("oName")
+            }
+            
+            if(oImgUrl != nil) {
+                _oImgUrl = (oImgUrl as AnyObject).description
+                _fields.append("oImgUrl")
             }
             
             if(uNo != nil) {

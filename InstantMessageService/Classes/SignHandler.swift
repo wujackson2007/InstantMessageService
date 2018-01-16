@@ -21,6 +21,13 @@ class SignHandler : NSObject {
         stop()
     }
     
+    ///連線編號
+    var connectionId:String {
+        get {
+            return _connection?.connectionId ?? ""
+        }
+    }
+    
     var isConnected:Bool {
         get {
             if(_connection != nil) {
