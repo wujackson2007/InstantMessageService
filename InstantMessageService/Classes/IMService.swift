@@ -574,6 +574,7 @@ extension IMService : RtcHandlerDelegate {
         switch newState {
         case RTCIceConnectionState.connected, RTCIceConnectionState.completed:
             _isIceConnected = true
+            /*
             let _size = self._promiseRtcConnected.count-1
             if(_size > -1) {
                 for _ in 0..._size {
