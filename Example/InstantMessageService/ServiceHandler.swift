@@ -74,6 +74,15 @@ class ServiceHandler {
             }
             
             imService.start(hubName: "echathub", url: "\(apiHost)/eChatHub", queryString: ["tNo": tNo, "Token": toKen, "Chat": "1"], onStart: fn)
+            /*
+            imService.start(hubName: "echathub", url: "\(apiHost)/eChatHub", queryString: [
+                "oNo": roomData.oNo
+                , "uNo": roomData.uNo
+                , "Token": "GUID"
+                , "Online": true
+                , "Chat": 1
+                ], onStart: fn)
+ */
         }
     }
     

@@ -20,10 +20,12 @@ public class IMService : NSObject {
     final var _localProxy:ProxyRenderer = ProxyRenderer()
     final var _remoteProxy:ProxyRenderer = ProxyRenderer()
     
+    
     public var rtcMedia:RtcMedia { get { return _rtcMedia! } }
     var _isServiceStart:Bool = false
     var _isSignConnected:Bool = false
     var _isIceConnected:Bool = false
+    var _isTalkEnter:Bool = false;
     
     /// 服務是否啟動
     public var isServiceStart:Bool { get { return _isServiceStart } }
@@ -288,6 +290,7 @@ public class IMService : NSObject {
                 _promiseRtcConnected.append({
                     _fn()
                 })
+                self.checkRtcConnected(sender: self)
                 notifyUser()
             }
             break
@@ -299,6 +302,7 @@ public class IMService : NSObject {
                 _promiseRtcConnected.append({
                     self.phoneViewOpen(isDial: isDial, isVideo: isVideo)
                 })
+                self.checkRtcConnected(sender: self)
                 notifyUser()
             }
             break
@@ -329,6 +333,28 @@ public class IMService : NSObject {
     
     public func savePushToken(tokenId:String, deviceId:String) -> Void {
         signInvoke(method: "savePushToken", withArgs: [tokenId, deviceId, 8])
+    }
+    
+    public func rmPushToken(deviceId:String) -> Void {
+        signInvoke(method: "deletePushToken", withArgs: [deviceId, 8])
+    }
+    
+    public func checkRtcConnected(sender:Any) -> Void {
+        _ = utility.setTimeout(delay: 0.2, callbackArgs: sender) { (args:Any?) in
+            if let _im = args as? IMService {
+                if(_im._isIceConnected && _im._isTalkEnter) {
+                    let _size = _im._promiseRtcConnected.count-1
+                    if(_size > -1) {
+                        for _ in 0..._size {
+                            _im._promiseRtcConnected.remove(at: 0)()
+                        }
+                    }
+                }
+                else {
+                    _im.checkRtcConnected(sender: _im)
+                }
+            }
+        }
     }
 }
 /** ==============================================================================================
@@ -436,6 +462,10 @@ extension IMService : SignHandlerDelegate {
                     }
                 }
             })
+            break
+           
+        case "onTalkEnter":
+            self._isTalkEnter = true
             break
             
         case "onTalkLeave":
@@ -550,10 +580,12 @@ extension IMService : RtcHandlerDelegate {
                     self._promiseRtcConnected.remove(at: 0)()
                 }
             }
+            */
             break
             
         default:
             _isIceConnected = false
+            _isTalkEnter = false
             break
         }
     }

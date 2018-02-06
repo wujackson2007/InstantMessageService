@@ -44,7 +44,7 @@ class LoginController: UIViewController {
     static var tImgUrl:String {
         get {
             if let loginInfo = UserDefaults.standard.value(forKey: "loginInfo") as? Dictionary<String, String> {
-                return loginInfo["tImgUrl"] ?? ""
+                return loginInfo["tImgURL"] ?? ""
             }
             return ""
         }

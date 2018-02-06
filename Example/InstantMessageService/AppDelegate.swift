@@ -122,8 +122,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 let message = _aps["message"]?.description ?? ""
                 let empName = _aps["empName"]?.description ?? ""
                 
-                ServiceHandler.roomData.setInfo(userType: _aps["uType"]?.description ?? ""
-                    , cid: _aps["cId"]?.description ?? ""
+                ServiceHandler.roomData.setInfo(cid: _aps["cId"]?.description ?? ""
                     , oNo: _aps["oNo"]?.description ?? ""
                     , oImgUrl: _aps["imgURL"]?.description ?? ""
                     , uNo: _aps["uNo"]?.description ?? ""
